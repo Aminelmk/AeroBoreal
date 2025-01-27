@@ -1,0 +1,3 @@
+/home/aminelmk/Bureau/HTML/cpp_code/build/CMakeFiles/process_data.dir
+/home/aminelmk/Bureau/HTML/cpp_code/build/CMakeFiles/edit_cache.dir
+/home/aminelmk/Bureau/HTML/cpp_code/build/CMakeFiles/rebuild_cache.dir

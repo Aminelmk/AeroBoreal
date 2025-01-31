@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire d'entrées</title>
+    <title>Formulaire</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Entrez des valeurs</h1>
-    <form action="/" method="POST">
-        <label for="value1">Valeur 1 :</label>
-        <input type="text" id="value1" name="value1" required><br><br>
+    <div class="container">
+        <h1>Entrez des valeurs</h1>
+        <form action="/" method="POST">
+            <label for="value1">Valeur 1 :</label>
+            <input type="text" id="value1" name="value1" required>
 
-        <label for="value2">Valeur 2 :</label>
-        <input type="text" id="value2" name="value2" required><br><br>
+            <label for="value2">Valeur 2 :</label>
+            <input type="text" id="value2" name="value2" required>
 
-        <label for="value3">Valeur 3 :</label>
-        <input type="text" id="value3" name="value3" required><br><br>
+            <label for="value3">Valeur 3 :</label>
+            <input type="text" id="value3" name="value3" required>
 
-        <input type="submit" value="Envoyer">
-    </form>
+            <input type="submit" value="Envoyer">
+        </form>
+    </div>
 </body>
 </html>

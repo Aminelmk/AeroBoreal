@@ -1,0 +1,37 @@
+import dash
+from dash import dcc, html, Input, Output
+import dash_bootstrap_components as dbc
+import pages
+
+# Initialize Dash App with Pages Support
+app = dash.Dash(
+    __name__, 
+    use_pages=True, 
+    external_stylesheets=[dbc.themes.BOOTSTRAP], 
+    suppress_callback_exceptions=True  
+)
+
+
+server = app.server
+
+# Navigation Bar
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dcc.Link("Home", href="/", className="nav-link")),
+        dbc.NavItem(dcc.Link("Page 1", href="/page-1", className="nav-link")),
+        dbc.NavItem(dcc.Link("Page 2", href="/page-2", className="nav-link")),
+        dbc.NavItem(dcc.Link("Page 3", href="/page-3", className="nav-link")),
+    ],
+    brand="NACA Airfoil Dashboard",
+    color="blue",
+    dark=True,
+)
+
+# App Layout (Navigation + Page Container)
+app.layout = html.Div([
+    navbar,
+    dash.page_container  # This will display the selected page
+])
+
+if __name__ == "__main__":
+    app.run_server(debug=True)

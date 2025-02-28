@@ -1,0 +1,8 @@
+num_threads = None
+mesh_file = ../mesh/lovell_elliptic_64.xyz
+Mach = None
+alpha = None
+p_inf = None
+T_inf = None
+it_max = None
+output_file = None

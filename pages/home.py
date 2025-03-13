@@ -175,7 +175,11 @@ def update_visualizations_and_save(camber, camber_pos, thickness, nc,
     if triggered_id == "save_euler":
         euler_params = {
             "num_threads": num_threads, "mesh_file": mesh_file, "Mach": Mach,
+<<<<<<< HEAD
             "multigrid": multigrid, "CFL_number": CFL_number, "residual_smoothing": residual_smoothing,
+=======
+            "multigrid": multigrip, "CFL_number": CFL_number, "residual_smoothing": residual_smoothing,
+>>>>>>> 1447372bd0801f5ac8f126539cecddcce059da33
             "k2": k2, "k4": k4, "checkpoint_file": checkpoint_file,
             "alpha": alpha, "p_inf": p_inf, "T_inf": T_inf, "it_max": it_max, "output_file": output_file
         }

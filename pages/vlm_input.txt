@@ -1,0 +1,7 @@
+nx = 8
+ny = 8
+AR = None
+alpha = None
+p_inf = None
+T_inf = None
+Mach = None

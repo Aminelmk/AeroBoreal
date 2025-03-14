@@ -9,7 +9,7 @@ import os
 from mesh2D.naca4digits import Naca4Digits
 from mesh2D.conformal_mapping import ConformalMapping
 
-dash.register_page(__name__, path="/")
+dash.register_page(__name__, path="/home")
 
 CSV_FILE = "user_inputs.csv"
 

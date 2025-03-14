@@ -1,99 +1,115 @@
-
 import dash
 from dash import html, dcc, Input, Output
 import dash_vtk
 import dash_bootstrap_components as dbc
 import vtk
 from vtk.util import numpy_support
-from Dash_3D.planevtk import create_airplane 
-from Dash_3D.planevtk import create_custom_wing_from_data
 
+# Register the page with the route "/page-0"
 dash.register_page(__name__, path="/page-1")
 
-# Function to convert VTK PolyData to Dash-compatible format
-def extract_cells(polydata):
-    vtk_polys = polydata.GetPolys()
-    if vtk_polys.GetNumberOfCells() > 0:
-        vtk_cell_array = vtk_polys.GetData()
-        vtk_cell_array_np = numpy_support.vtk_to_numpy(vtk_cell_array)
-        return vtk_cell_array_np.tolist()
-    
-    vtk_lines = polydata.GetLines()
-    if vtk_lines.GetNumberOfCells() > 0:
-        vtk_cell_array = vtk_lines.GetData()
-        vtk_cell_array_np = numpy_support.vtk_to_numpy(vtk_cell_array)
-        return vtk_cell_array_np.tolist()
-    
-    vtk_verts = polydata.GetVerts()
-    if vtk_verts.GetNumberOfCells() > 0:
-        vtk_cell_array = vtk_verts.GetData()
-        vtk_cell_array_np = numpy_support.vtk_to_numpy(vtk_cell_array)
-        return vtk_cell_array_np.tolist()
-    
-    raise ValueError("Le PolyData ne contient pas de polygones, lignes ou vertices.")
+def load_vtu_file(file_path):
+    """
+    Load a VTU file from disk using VTK and convert it to vtkPolyData.
+    We use vtkGeometryFilter to transform the unstructured grid into polydata
+    that dash_vtk can display.
+    """
+    reader = vtk.vtkXMLUnstructuredGridReader()
+    reader.SetFileName(file_path)
+    reader.Update()
 
-def vtk_to_dash_vtk(polydata):
-    vtk_points = polydata.GetPoints()
-    np_points = numpy_support.vtk_to_numpy(vtk_points.GetData())
-    polys = extract_cells(polydata)
+    geometry_filter = vtk.vtkGeometryFilter()
+    geometry_filter.SetInputData(reader.GetOutput())
+    geometry_filter.Update()
+    
+    polydata = geometry_filter.GetOutput()
+    return polydata
 
-    return {
-        'points': np_points.flatten().tolist(),
-        'polys': polys,
-    }
+def vtk_polydata_to_dash(polydata):
+    """
+    Convert a vtkPolyData object into a dictionary for dash_vtk.PolyData.
+    The conversion returns:
+      - "points": a flat list of coordinates (x0, y0, z0, x1, y1, z1, ...).
+      - "polys": a flat list where each polygon is stored as:
+          [n, i1, i2, ..., in]
+        with n = number of vertices for that polygon.
+    """
+    # Extract points
+    vtk_points = polydata.GetPoints().GetData()
+    pts = numpy_support.vtk_to_numpy(vtk_points)
+    points = pts.flatten().tolist()
 
-# Layout of Page 1
-layout = html.Div([
-    html.H1("3D Airplane Visualization"),
-    html.P("Adjust the parameters below to update the airplane model."),
-    
-    # Sliders for controlling the 3D airplane
-    html.Label("Fuselage Radius"),
-    dcc.Slider(id="fuselage-radius-slider", min=0.5, max=2.0, step=0.1, value=1.0,
-               marks={i: str(i) for i in range(1, 3)}),
-    
-    html.Label("Fuselage Length"),
-    dcc.Slider(id="fuselage-length-slider", min=5.0, max=15.0, step=0.5, value=10.0,
-               marks={i: str(i) for i in range(5, 16, 5)}),
-    
-    # 3D Visualization with dash_vtk
-    html.Div([
-        dash_vtk.View(
-            id="vtk-view-3d",
-            cameraPosition=[0, 0, 50],
-            cameraViewUp=[0, 1, 0],
-            background=[1, 1, 1],
-            children=[
-                dash_vtk.GeometryRepresentation(
-                    dash_vtk.PolyData(id="vtk-polydata", points=[], polys=[]),
-                    property={
-                        "edgeVisibility": False,
-                        "color": [0.8, 0.8, 0.8],
-                        "backfaceCulling": False,
-                        "frontfaceCulling": False
-                    }
-                )
-            ],
-            style={"height": "500px", "width": "100%"}
+    # Extract polygons and pack in a flat array
+    polys = polydata.GetPolys()
+    polys.InitTraversal()
+    poly_flat = []
+    idList = vtk.vtkIdList()
+    while polys.GetNextCell(idList):
+        n = idList.GetNumberOfIds()
+        poly_flat.append(n)  # first element is the number of vertices
+        for i in range(n):
+            poly_flat.append(idList.GetId(i))
+    return {"points": points, "polys": poly_flat}
+
+# Define the layout: a header, a reload button, and a VTK View component.
+layout = dbc.Container([
+    dbc.Row(
+        dbc.Col(html.H2("Interactive VTU Visualization using dash_vtk"),
+                width={"size": 8, "offset": 2}),
+        className="mt-4"
+    ),
+    dbc.Row(
+        dbc.Col(
+            dbc.Button("Reload VTU Files", id="reload-button", color="primary", n_clicks=0),
+            width={"size": 4, "offset": 4}
         ),
-    ], style={"marginTop": "30px"}),
-])
-
-# Callback to update the 3D visualization dynamically
-@dash.callback(
-    [Output("vtk-polydata", "points"),
-     Output("vtk-polydata", "polys")],
-    [Input("fuselage-radius-slider", "value"),
-     Input("fuselage-length-slider", "value")]
-)
-def update_3d_visualization(fuselage_radius, fuselage_length):
-    polydata = create_airplane(
-        fuselage_radius=fuselage_radius,
-        fuselage_length=fuselage_length,
-        tail_size=1.0,
-        wing_points_file = "c:/Users/nadir/Desktop/C++/HTML_3D-NACA_2V/message.txt",
-        wing_connectivity="strips"
+        className="mb-3"
+    ),
+    dbc.Row(
+        dbc.Col(
+            dash_vtk.View(id="vtk-view", children=[], style={"height": "600px"}),
+            width=12
+        )
     )
+], fluid=True)
 
-    vtk_data = vtk_to_dash_vtk(polydata)
-    return vtk_data["points"], vtk_data["polys"]
+@dash.callback(
+    Output("vtk-view", "children"),
+    Input("reload-button", "n_clicks")
+)
+def update_vtk_view(n_clicks):
+    """
+    Callback that loads the VTU file(s), converts the polydata for dash_vtk,
+    and creates interactive GeometryRepresentation components.
+    
+    The returned dash_vtk.View automatically supports mouse interactions
+    such as rotation, panning, and zooming.
+    """
+    # List the VTU file paths you wish to load. Adjust as needed.
+    vtu_files = [
+        "/home/vincent/pi4/GUI/HTML_3D/mesh_fuse_vertical.vtu"
+    ]
+    
+    representations = []
+    colors = [
+        [1, 0, 0],   # Red
+        [0, 1, 0],   # Green
+        [0, 0, 1],   # Blue
+        [1, 1, 0]    # Yellow
+    ]
+    
+    for i, file_path in enumerate(vtu_files):
+        try:
+            polydata = load_vtu_file(file_path)
+            dash_data = vtk_polydata_to_dash(polydata)
+            poly_component = dash_vtk.PolyData(**dash_data)
+            
+            rep = dash_vtk.GeometryRepresentation(
+                children=[poly_component],
+                property={"color": colors[i % len(colors)], "opacity": 1.0}
+            )
+            representations.append(rep)
+        except Exception as e:
+            print(f"Error loading file {file_path}: {e}")
+    
+    return representations

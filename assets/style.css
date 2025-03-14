@@ -125,6 +125,8 @@ input[type="submit"]:hover {
     font-weight: bold; /* Makes text stand out */
 }
 
+.nav-link[href="/home"],
+.nav-link[href="/page-0"],
 .nav-link[href="/page-1"],
 .nav-link[href="/page-2"],
 .nav-link[href="/page-3"] {

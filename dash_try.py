@@ -17,20 +17,23 @@ server = app.server
 # Navigation Bar
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dcc.Link("Home", href="/", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 1", href="/page-1", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 2", href="/page-2", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 3", href="/page-3", className="nav-link")),
+        dbc.NavItem(dbc.NavLink("Home", href="/home", active="exact")),
+        dbc.NavItem(dbc.NavLink("Page test", href="/page-0", active="exact")),
+        dbc.NavItem(dbc.NavLink("Page 1", href="/page-1", active="exact")),
+        dbc.NavItem(dbc.NavLink("Page 2", href="/page-2", active="exact")),
+        dbc.NavItem(dbc.NavLink("Page 3", href="/page-3", active="exact")),
     ],
     brand="NACA Airfoil Dashboard",
-    color="blue",
+    brand_href="/",
+    color="primary",
     dark=True,
 )
 
-# App Layout (Navigation + Page Container)
+# The layout includes a Location component (for URL tracking), your navbar, and the container where pages render.
 app.layout = html.Div([
+    dcc.Location(id="url"),
     navbar,
-    dash.page_container  # This will display the selected page
+    dash.page_container
 ])
 
 if __name__ == "__main__":

@@ -89,13 +89,13 @@ mesh_controls = {
                                 html.A('Select Files')
                             ]),
                             style={
+                                'width': '100%',
+                                'height': '60px',
+                                'lineHeight': '60px',
                                 'borderWidth': '1px',
                                 'borderStyle': 'dashed',
-                                'textAlign': 'center',
-                                'height': '100%',  # Match button height
-                                'display': 'flex',  # Align content
-                                'alignItems': 'center',  # Center content vertically
-                                'justifyContent': 'center'  # Center content horizontally
+                                'borderRadius': '5px',
+                                'textAlign': 'center'
                             },
                             # Allow multiple files to be uploaded
                             multiple=False
@@ -186,12 +186,20 @@ layout = html.Div([
                                 html.Div([
                                     dbc.Row([
                                         dbc.Col([
-                                            dcc.Upload(
-                                                id='upload-data',
-                                                children=dbc.Button("Select File", color="primary"),
-                                                multiple=False
-                                            )
-                                        ], width=6),
+                                            dcc.Upload([
+                                                'Drag and Drop or ',
+                                                html.A('Select a File')
+                                            ], id='upload-data',
+                                                style={
+                                                'width': '100%',
+                                                'height': '60px',
+                                                'lineHeight': '60px',
+                                                'borderWidth': '1px',
+                                                'borderStyle': 'dashed',
+                                                'borderRadius': '5px',
+                                                'textAlign': 'center'
+                                            })
+                                        ], width=8),
 
                                         dbc.Col([
                                             html.Button('Fit Airfoil', id='fit-airfoil', n_clicks=0)
@@ -239,7 +247,7 @@ layout = html.Div([
 
                         dbc.AccordionItem([
                         ], title="Mesh"),
-                    ]),
+                    ], flush=True),
                 ]),
             ]),
         ]),

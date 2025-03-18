@@ -15,16 +15,38 @@ app = dash.Dash(
 server = app.server
 
 # Navigation Bar
+# navbar = dbc.NavbarSimple(
+#     children=[
+#         dbc.NavItem(dcc.Link("Home", href="/", className="nav-link")),
+#         dbc.NavItem(dcc.Link("Mesh", href="/page-mesh2d", className="nav-link")),
+#         dbc.NavItem(dcc.Link("Page 1", href="/page-1", className="nav-link")),
+#         dbc.NavItem(dcc.Link("Page 2", href="/page-2", className="nav-link")),
+#         dbc.NavItem(dcc.Link("Page 3", href="/page-3", className="nav-link")),
+#     ],
+#     brand="NACA Airfoil Dashboard Test",
+#     color="blue",
+#     dark=True,
+#     className="ml-auto",
+# )
+
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dcc.Link("Home", href="/", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 1", href="/page-1", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 2", href="/page-2", className="nav-link")),
-        dbc.NavItem(dcc.Link("Page 3", href="/page-3", className="nav-link")),
+        dbc.NavItem(dbc.NavLink("Home", href="/")),
+        dbc.DropdownMenu(
+            children=[
+                dbc.DropdownMenuItem("More pages", header=True),
+                dbc.DropdownMenuItem("Mesh", href="/page-mesh2d"),
+                dbc.DropdownMenuItem("Page 1", href="/page-1"),
+            ],
+            nav=True,
+            in_navbar=True,
+            label="More",
+        ),
     ],
-    brand="NACA Airfoil Dashboard",
-    color="blue",
-    dark=True,
+    brand="Logiciel Aéro-élastique",
+    brand_href="#",
+    color="primary",
+    dark=False,
 )
 
 # App Layout (Navigation + Page Container)

@@ -1,0 +1,14 @@
+num_threads = 4
+mesh_file = x.6
+Mach = 0.5
+alpha = 5
+p_inf = 100000
+T_inf = 300
+multigrid = 0
+CFL_number = 3
+residual_smoothing = 0
+k2 = 2
+k4 = 2
+it_max = 10000
+output_file = test.q
+checkpoint_file = checkpoint_test.txt

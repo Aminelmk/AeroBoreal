@@ -5,20 +5,15 @@ import dash_daq as daq
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import numpy as np
-import csv
-import os
-
-import pandas as pd
 
 import base64
 import io
 
 from mesh2D.naca4digits import Naca4Digits
 from mesh2D.cst_class import CstAirfoil
-from mesh2D.conformal_mapping import ConformalMapping
+from mesh2D.poisson_grid_testing import PoissonMesh
 
 dash.register_page(__name__, path="/page-mesh2d")
-
 
 
 INIT_CAMBER = 0
@@ -26,9 +21,9 @@ INIT_CAMBER_POS = 0
 INIT_THICKNESS = 12
 
 airfoil = None
+mesh = None
 
-
-def display_airfoil(airfoil, points=None):
+def display_airfoil(airfoil, points=None, mesh=None):
 
     x, y = airfoil.get_all_surface(1000)
 
@@ -45,6 +40,17 @@ def display_airfoil(airfoil, points=None):
                               showlegend=False, width=800, height=600)
 
 
+    if mesh is not None:
+        for cell in group_nodes(mesh):
+            x, y = cell[0]
+            airfoil_fig.add_trace(go.Scatter(x=x, y=y, mode="lines", line=dict(color="black")))
+
+        airfoil_fig.update_layout(title=f"Airfoil Mesh",
+                                  xaxis_title="x/c", yaxis_title="y/c",
+                                  xaxis_range=[-2.5, 3],
+                                  yaxis_scaleanchor="x",
+                                  showlegend=False, width=800, height=600)
+
     return airfoil_fig
 
 
@@ -59,81 +65,29 @@ def update_cst_airfoil(n_order, N1=0.5, N2=1.0):
 airfoil = update_naca_airfoil(INIT_CAMBER, INIT_CAMBER_POS, INIT_THICKNESS)
 airfoil_fig = display_airfoil(airfoil)
 
+def group_nodes(grid):
 
-mesh_controls = {
-    "NACA": html.Div([
-        html.Label("Max Camber (1/100)"),
-        dcc.Slider(id="max_camber_slider", min=0, max=9, step=1, value=INIT_CAMBER,
-                   marks={i: str(i) for i in range(0, 10)}),
+    nodes_per_cell = []
 
-        html.Label("Camber Position (1/10)"),
-        dcc.Slider(id="max_camber_pos_slider", min=0, max=9, step=1, value=INIT_CAMBER_POS,
-                   marks={i: str(i) for i in range(0, 10)}),
+    next_index = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]
 
-        html.Label("Max Thickness (%)"),
-        dcc.Slider(id="max_thickness_slider", min=1, max=20, step=1, value=INIT_THICKNESS,
-                   marks={i: str(i) for i in range(0, 100, 1)}),
+    for i in range(grid.n_nodes - 1):
+        for j in range(grid.n_nodes - 1):
+            x = np.empty(4)
+            y = np.empty(4)
+            nodes_per_cell.append([])
 
-        html.Label("Number of Points in Mesh"),
-        dcc.Slider(id="nc_slider", min=8, max=128, step=8, value=32,
-                   marks={i: str(i) for i in range(8, 129, 16)})
-    ], className="controls"),
+            for k in range(4):
+                pi = i + next_index[k][0]
+                pj = j + next_index[k][1]
+                x[k] = grid.X[pi][pj]
+                y[k] = grid.Y[pi][pj]
 
-    "CST": html.Div([
-        dbc.Row([
-            dbc.Col([
-                dcc.Upload(
-                            id='upload-data',
-                            children=html.Div([
-                                'Drag and Drop or ',
-                                html.A('Select Files')
-                            ]),
-                            style={
-                                'width': '100%',
-                                'height': '60px',
-                                'lineHeight': '60px',
-                                'borderWidth': '1px',
-                                'borderStyle': 'dashed',
-                                'borderRadius': '5px',
-                                'textAlign': 'center'
-                            },
-                            # Allow multiple files to be uploaded
-                            multiple=False
-                        ),
-            ], width=8, style={'display': 'flex', 'alignItems': 'center'}),
+            nodes_per_cell[-1].append((x, y))
 
-            dbc.Col([
-                html.Button('Fit Airfoil', id='fit-airfoil', n_clicks=0)
-            ], width=4),
-        ]),
-
-        dbc.Row([
-            dcc.Checklist(['Show Airfoil Points'], ['Show Airfoil Points'])
-        ]),
-
-        dbc.Row([
-            dbc.Col([
-                html.H5("N Order: ")
-            ], width=4),
-
-            dbc.Col([
-                dcc.Input(
-                    min=1,
-                    max=7,
-                    value=3,
-                    id='n-order-input',
-                    step=1,
-                )
-            ], width=8)
-        ]),
-
-        dbc.Row(html.Div(id="coefficients-inputs")),
-
-    ], className="controls"),
-}
+    return nodes_per_cell
 
 
-# Layout of Page 1
 layout = html.Div([
     # ===== Geometry Generation =====
     html.Div([
@@ -155,7 +109,7 @@ layout = html.Div([
                                 dbc.Label("Select Method:", width="auto"),
                                 dcc.Dropdown(
                                     id="mesh-dropdown",
-                                    options=[{"label": key, "value": key} for key in mesh_controls.keys()],
+                                    options=[{"label": key, "value": key} for key in ['NACA', 'CST']],
                                     value='NACA',
                                     style={"flex": 1}  # Ensures it takes up remaining space
                                 ),
@@ -246,8 +200,15 @@ layout = html.Div([
                         ], title="Geometry"),
 
                         dbc.AccordionItem([
+                            html.Div([
+                                html.P("Number of cells (2^x):"),
+                                dcc.Slider(3, 7, step=1, value=6, id="n-cell-slider"),
+                                dbc.Button("Generate Mesh", id="button-generate-mesh", className="me-2", n_clicks=0),
+                                dbc.Button("Download Mesh", id="button-download-mesh", className="me-2"),
+                                dcc.Download(id="download-mesh"),
+                            ])
                         ], title="Mesh"),
-                    ], flush=True),
+                    ], id="accordion", flush=True),
                 ]),
             ]),
         ]),
@@ -339,11 +300,15 @@ def update_coefficients_inputs(n_order):
         State("n-order-input", "value"),
         Input("upload-data", "contents"),
         Input("fit-airfoil", "n_clicks"),
+        Input("n-cell-slider", "value"),
+        Input("button-generate-mesh", "n_clicks"),
     ],
     prevent_initial_call=True
 )
-def update_airfoil(selected_option, camber, camber_pos, thickness, A_upper_values, A_lower_values, n_order, contents, fit_airfoil):
+def update_airfoil(selected_option, camber, camber_pos, thickness, A_upper_values, A_lower_values, n_order, contents, fit_airfoil, n_cell, generate_mesh):
     """Handles both NACA and CST airfoil updates in a single callback."""
+
+    global airfoil
 
     triggered_id = ctx.triggered_id
 
@@ -365,15 +330,56 @@ def update_airfoil(selected_option, camber, camber_pos, thickness, A_upper_value
 
         return display_airfoil(airfoil, points=airfoil.imported_airfoil)
 
-    elif selected_option == "CST" and n_order is not None:
+
+    elif selected_option == "CST" and triggered_id in ["n-order-input"] or (isinstance(triggered_id, dict) and triggered_id.get("type") in ["A_upper", "A_lower"]):
+
+        print("Generating CST")
+
         airfoil = update_cst_airfoil(n_order, N1=0.5, N2=1.0)
         if A_upper_values is not None and A_lower_values is not None:
             airfoil.A_upper = np.array(A_upper_values)
             airfoil.A_lower = np.array(A_lower_values)
+
+    elif triggered_id == "button-generate-mesh":
+        print("Generating mesh")
+
+        n_nodes = 2**n_cell + 1
+
+        n_xc_nodes = int((2**n_cell / 2) + 1)
+
+        beta = np.linspace(0, np.pi, n_xc_nodes)
+        xc = 0.5 * (1 - np.cos(beta))
+        xs, ys = airfoil.get_surface_from_x(xc)
+
+        mesh = PoissonMesh(n_nodes, xs, ys)
+        mesh.ff_radius = 100
+        mesh.init_grid()
+        mesh.grid_relaxation(tol=1e-8, max_iter=10_000)
+        mesh.write_plot3d("./temp/mesh.xyz")
+
+        return display_airfoil(airfoil, mesh=mesh)
+
     else:
-        return dash.no_update
+        print("Retuning airfoil as is")
+        return display_airfoil(airfoil, points=None)
 
     return display_airfoil(airfoil)
+
+
+
+@dash.callback(
+    Output("download-mesh", "data"),
+    Input("button-download-mesh", "n_clicks"),
+)
+def download_mesh(n_clicks):
+    return dcc.send_file("./temp/mesh.xyz")
+
+
+@dash.callback(
+    Input("accordion", "active_item")
+)
+def change_item(item):
+    print(f"Item selected: {type(item)}")
 
 
 # @dash.callback(

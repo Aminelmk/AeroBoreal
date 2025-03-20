@@ -70,9 +70,20 @@ class CstAirfoil:
 
         return x_all, y_all
 
+    def get_surface_from_x(self, x):
+
+        upper_fit = self.compute_cst(x, *self.A_upper)
+        lower_fit = self.compute_cst(x, *self.A_lower)
+
+        x_all = np.concatenate((x[::-1], x[1:]), axis=0)
+        y_all = np.concatenate((lower_fit[::-1], upper_fit[1:]), axis=0)
+
+        return x_all, y_all
+
+
 if __name__ == '__main__':
 
-    cst = cst_airfoil(3, N1=0.5, N2=1.0)
+    cst = CstAirfoil(3, N1=0.5, N2=1.0)
 
     cst.import_points('example_airfoil_points.dat')
     cst.fit_airfoil()

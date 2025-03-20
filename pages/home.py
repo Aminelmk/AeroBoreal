@@ -1,15 +1,10 @@
 import dash
-from dash import dcc, html, Input, Output, State, ctx
-import dash_daq as daq
+from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import numpy as np
 import csv
 import os
-
-from mesh2D.naca4digits import Naca4Digits
-from mesh2D.cst_class import CstAirfoil
-from mesh2D.conformal_mapping import ConformalMapping
 
 dash.register_page(__name__, path="/")
 

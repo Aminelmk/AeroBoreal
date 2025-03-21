@@ -5,7 +5,6 @@ import vtk
 from vtk.util import numpy_support
 import numpy as np
 import plotly.graph_objs as go
-import io, base64
 
 # Register the page with the route "/page-0"
 dash.register_page(__name__, path="/page-0")
@@ -35,9 +34,9 @@ def triangulate_polydata(polydata):
     triangle_filter.Update()
     return triangle_filter.GetOutput()
 
-def polydata_to_plotly_mesh(polydata, color="red"):
+def polydata_to_plotly_mesh(polydata, color="blue"):
     """
-    Convert triangulated vtkPolyData to a Plotly Mesh3d object for 3D visualization.
+    Convert triangulated vtkPolyData to a Plotly Mesh3d object.
     Assumes that polydata cells are triangles.
     """
     # Extract points array.
@@ -45,7 +44,6 @@ def polydata_to_plotly_mesh(polydata, color="red"):
     points = numpy_support.vtk_to_numpy(points_vtk)
 
     # Retrieve triangle faces from polydata.
-    # Since we have triangulated the polydata, each cell is a triangle.
     polys = polydata.GetPolys()
     polys.InitTraversal()
     faces = []
@@ -53,12 +51,9 @@ def polydata_to_plotly_mesh(polydata, color="red"):
     while polys.GetNextCell(idList):
         if idList.GetNumberOfIds() != 3:
             continue  # skip non-triangles
-        # Build a face (triangle) that is a list of 3 vertex indices.
         face = [idList.GetId(i) for i in range(3)]
         faces.append(face)
     
-    # Flatten the list of faces.
-    # Each face is a triangle, so faces_flat will be a multiple of 3.
     faces_flat = [item for sublist in faces for item in sublist]
 
     mesh = go.Mesh3d(
@@ -74,7 +69,7 @@ def polydata_to_plotly_mesh(polydata, color="red"):
     )
     return mesh
 
-# Layout: header, reload button, and a Plotly 3D graph.
+# Layout: includes a dropdown for switching wings, reload button, and a 3D plot.
 layout = dbc.Container([
     dbc.Row(
         dbc.Col(
@@ -85,6 +80,21 @@ layout = dbc.Container([
     ),
     dbc.Row(
         dbc.Col(
+            dcc.Dropdown(
+                id="wing-selector",
+                options=[
+                    {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
+                    {"label": "Deformed Wing", "value": "deformed"}
+                ],
+                value="initial",  # Default selection
+                placeholder="Select Wing Type"
+            ),
+            width={"size": 6, "offset": 3}
+        ),
+        className="mb-3"
+    ),
+    dbc.Row(
+        dbc.Col(
             dbc.Button("Reload VTU Files", id="reload-button", color="primary", n_clicks=0),
             width={"size": 4, "offset": 4}
         ),
@@ -92,42 +102,53 @@ layout = dbc.Container([
     ),
     dbc.Row(
         dbc.Col(
-            dcc.Graph(id="3d-plot1", style={"width": "100%", "height": "800px"}),
+            dcc.Graph(id="3d-plot", style={"width": "100%", "height": "800px"}),
             width=10
         )
     )
 ], fluid=True)
 
 @dash.callback(
-    Output("3d-plot1", "figure"),
-    Input("reload-button", "n_clicks")
+    Output("3d-plot", "figure"),
+    [Input("reload-button", "n_clicks"),
+     Input("wing-selector", "value")]
 )
-def update_plot(n_clicks):
+def update_plot(n_clicks, wing_type):
     """
-    Callback triggered by the reload button that:
-      1. Loads the VTU file(s) from disk.
-      2. Triangulates each VTU's polydata.
-      3. Converts each triangulated polydata to a Plotly mesh3d object.
-      4. Creates a Plotly 3D figure with all the meshes.
+    Callback triggered by the reload button or the wing type selector.
+    Dynamically loads the appropriate VTU file based on the selected wing type.
     """
-    # List the VTU file paths you want to load. Adjust these paths as necessary.
-    vtu_files = [
+    # List your VTU file paths.
+    vtu_files = {
+        "initial": "../HTML_3D/output_0_nx_3_ny_40.vtu",  # Path for the initial (non-deformed) wing
+        "deformed": "../HTML_3D/output_10_nx_3_ny_40.vtu"  # Path for the deformed wing
+    }
+
+    # Always load the other components (fuselage, stabilizers, etc.)
+    other_components = [
         "../HTML_3D/mesh_fuse_vertical.vtu",
         "../HTML_3D/mesh_fuse_horizontal.vtu",
-        "../HTML_3D/mesh_wing.vtu",
         "../HTML_3D/mesh_vstab.vtu",
-        "../HTML_3D/mesh_hstab.vtu",
-        # You can add more file paths if needed.
+        "../HTML_3D/mesh_hstab.vtu"
     ]
-
-    # Define colors to differentiate each model.
-    colors = ["red", "green", "blue", "yellow", "purple", "orange"]
-
+    
+    colors = ["blue", "green", "red", "yellow", "purple", "orange"]
     meshes = []
-    for i, file_path in enumerate(vtu_files):
+
+    # Load the selected wing type.
+    try:
+        wing_file = vtu_files[wing_type]
+        wing_polydata = load_vtu_file(wing_file)
+        tri_wing_polydata = triangulate_polydata(wing_polydata)
+        wing_mesh = polydata_to_plotly_mesh(tri_wing_polydata, color="blue")
+        meshes.append(wing_mesh)
+    except Exception as e:
+        print(f"Error loading wing file: {e}")
+
+    # Load other components.
+    for i, file_path in enumerate(other_components):
         try:
             polydata = load_vtu_file(file_path)
-            # Triangulate the polydata.
             tri_polydata = triangulate_polydata(polydata)
             mesh = polydata_to_plotly_mesh(tri_polydata, color=colors[i % len(colors)])
             meshes.append(mesh)
@@ -136,13 +157,13 @@ def update_plot(n_clicks):
 
     fig = go.Figure(data=meshes)
 
-    # Update layout for better visualization and equal aspect ratio.
+    # Update layout for better visualization and axis scaling.
     fig.update_layout(
         scene=dict(
             xaxis=dict(title="X"),
             yaxis=dict(title="Y"),
             zaxis=dict(title="Z"),
-            aspectmode="data"  # Ensures uniform scaling on all axes.
+            aspectmode="data"  # Ensures scaling stays true to geometry.
         ),
         margin=dict(l=0, r=0, b=0, t=0)
     )

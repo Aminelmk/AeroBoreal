@@ -21,7 +21,14 @@ def load_vtu_file(file_path):
     geometry_filter.SetInputData(reader.GetOutput())
     geometry_filter.Update()
     polydata = geometry_filter.GetOutput()
-    return polydata
+
+    # Perform cell-to-point data conversion.
+    cell_to_point_filter = vtk.vtkCellDataToPointData()
+    cell_to_point_filter.SetInputData(polydata)
+    cell_to_point_filter.Update()
+    converted_polydata = cell_to_point_filter.GetOutput()
+
+    return converted_polydata
 
 def triangulate_polydata(polydata):
     """
@@ -43,7 +50,7 @@ def extract_cell_data(polydata, scalar_name):
     else:
         raise ValueError(f"Scalar field '{scalar_name}' not found in VTU file.")
 
-def polydata_to_plotly_mesh_with_scalar(polydata, scalar_name="pressure", colorscale="Viridis"):
+def polydata_to_plotly_mesh_with_scalar(polydata, pressure_values, scalar_name="pressure", colorscale="Viridis"):
     """
     Convert triangulated vtkPolyData to a Plotly Mesh3d object with scalar coloring.
     """
@@ -79,7 +86,7 @@ def polydata_to_plotly_mesh_with_scalar(polydata, scalar_name="pressure", colors
         i=faces_flat[0::3],
         j=faces_flat[1::3],
         k=faces_flat[2::3],
-        intensity=scalar_values,  # Scalar values for color intensity.
+        intensity=pressure_values,  # Pass the point-based pressure values
         colorscale=colorscale,    # Use Viridis (or any other Plotly colorscale).
         showscale=True,           # Display the color scale bar.
         opacity=0.8,
@@ -151,66 +158,65 @@ layout = dbc.Container(
     [Input("reload-button", "n_clicks"), Input("wing-selector", "value")]
 )
 def update_plot(n_clicks, wing_type):
-    """
-    Load VTU files, triangulate their polydata, and visualize the selected wing.
-    """
-    # VTU file paths for the wings (adjust paths as necessary).
+    # VTU file paths
     wing_files = {
         "initial": "../HTML_3D/output_0_nx_3_ny_40.vtu",
-        "deformed": "../HTML_3D/output_10_nx_3_ny_40.vtu"
+        "deformed": "../HTML_3D/output_10_nx_3_ny_40.vtu",
     }
-
-    # Always load other components (fuselage, stabilizers, etc.).
     other_components = [
         "../HTML_3D/mesh_fuse_vertical.vtu",
         "../HTML_3D/mesh_fuse_horizontal.vtu",
         "../HTML_3D/mesh_vstab.vtu",
-        "../HTML_3D/mesh_hstab.vtu"
+        "../HTML_3D/mesh_hstab.vtu",
     ]
-    
-    colors = ["blue", "green", "red", "yellow", "purple", "orange"]
+
     meshes = []
 
-    # Load the selected wing.
+    # Load the selected wing
     try:
         wing_file = wing_files[wing_type]
         wing_polydata = load_vtu_file(wing_file)
+        
+        # Debug: Check pressure field after conversion
+        print("Pressure (after conversion):", wing_polydata.GetPointData().GetArray("pressure"))
+
+        pressure_values = numpy_support.vtk_to_numpy(wing_polydata.GetPointData().GetArray("pressure"))
+        print("Pressure Values Shape:", pressure_values.shape)
+
         tri_wing_polydata = triangulate_polydata(wing_polydata)
         wing_mesh = polydata_to_plotly_mesh_with_scalar(
             tri_wing_polydata,
-            scalar_name="pressure",  # Name of the scalar field to visualize.
-            colorscale="Viridis", 
+            pressure_values,
+            scalar_name="pressure",
+            colorscale="Viridis",
         )
         meshes.append(wing_mesh)
     except Exception as e:
         print(f"Error loading wing file: {e}")
 
-    # Load other components.
+    # Load other components
     for i, file_path in enumerate(other_components):
         try:
-            polydata = load_vtu_file(file_path)
+            polydata = load_vtu_file(file_path)  # Correct polydata reference
             tri_polydata = triangulate_polydata(polydata)
             mesh = polydata_to_plotly_mesh_with_scalar(
                 tri_polydata,
-                scalar_name="pressure",  # Use the same scalar field for other components if needed.
-                colorscale="Cividis",    # Different colorscale for distinction.
-                          # Hide the color scale bar for other components.
+                scalar_name="pressure",
+                colorscale="Cividis",
             )
             meshes.append(mesh)
         except Exception as e:
             print(f"Error loading file {file_path}: {e}")
 
     fig = go.Figure(data=meshes)
-
-    # Update layout for better visualization and axis scaling.
     fig.update_layout(
         scene=dict(
             xaxis=dict(title="X"),
             yaxis=dict(title="Y"),
             zaxis=dict(title="Z"),
-            aspectmode="data"  # Keeps axes scaled proportionally.
+            aspectmode="data",
         ),
-        margin=dict(l=20, r=20, b=20, t=20)
+        margin=dict(l=20, r=20, b=20, t=20),
     )
-
     return fig
+

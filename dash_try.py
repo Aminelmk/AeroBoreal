@@ -20,7 +20,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Home", href="/home", active="exact")),
         dbc.NavItem(dbc.NavLink("Page test", href="/page-0", active="exact")),
         dbc.NavItem(dbc.NavLink("Page 1", href="/page-1", active="exact")),
-        dbc.NavItem(dbc.NavLink("Page 2", href="/page-2", active="exact")),
+        # dbc.NavItem(dbc.NavLink("Page 2", href="/page-2", active="exact")),
         dbc.NavItem(dbc.NavLink("Page 3", href="/page-3", active="exact")),
     ],
     brand="NACA Airfoil Dashboard",

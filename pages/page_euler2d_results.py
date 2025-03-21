@@ -5,9 +5,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 
-from . import euler2D
-from .euler2D import euler_solver as euler_solver
-
 dash.register_page(__name__, path="/page-euler2d-results")
 
 # ======================================================================

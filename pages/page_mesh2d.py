@@ -9,9 +9,9 @@ import numpy as np
 import base64
 import io
 
-from mesh2D.naca4digits import Naca4Digits
-from mesh2D.cst_class import CstAirfoil
-from mesh2D.poisson_grid_testing import PoissonMesh
+from mesh2d.naca4digits import Naca4Digits
+from mesh2d.cst_class import CstAirfoil
+from mesh2d.poisson_grid_testing import PoissonMesh
 
 dash.register_page(__name__, path="/page-mesh2d")
 
@@ -370,6 +370,7 @@ def update_airfoil(selected_option, camber, camber_pos, thickness, A_upper_value
 @dash.callback(
     Output("download-mesh", "data"),
     Input("button-download-mesh", "n_clicks"),
+    prevent_initial_call=True,
 )
 def download_mesh(n_clicks):
     return dcc.send_file("./temp/mesh.xyz")

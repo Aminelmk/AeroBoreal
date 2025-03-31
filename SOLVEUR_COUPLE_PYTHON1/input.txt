@@ -1,9 +1,0 @@
-Mach = 0.300001
-alpha = 10.0
-p_inf = 100000
-T_inf = 300
-database_path = x.6
-it_max = 100
-wing_mesh_path = mesh_wing.txt
-nb_nodes = 3
-quarter_chord_ratio = 0.25

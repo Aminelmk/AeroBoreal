@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from conformal_mapping import ConformalMapping
-from naca4digits import Naca4Digits
+from naca4digits_deprecated import Naca4Digits
 
 # Number of cells in the i and j direction
 NC = 32

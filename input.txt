@@ -1,5 +1,5 @@
 num_threads = 4
-mesh_file = ./temp/mesh.xyz
+mesh_file = temp/mesh.xyz
 Mach = 0.5
 alpha = 5
 p_inf = 100000

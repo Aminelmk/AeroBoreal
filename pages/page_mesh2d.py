@@ -9,15 +9,14 @@ import base64
 import io
 import os
 
-from mesh2d.conformal_mapping import ConformalMapping  
+# from mesh2d.conformal_mapping import ConformalMapping
 from mesh2d.naca4digits import Naca4Digits
 from mesh2d.cst_class import CstAirfoil
-from mesh2d.poisson_grid_testing import PoissonMesh
-import B_SPLINE_SOLVER # Module B-spline mis à jour avec .pyd/.lib/.exp
-# from B_SPLINE_SOLVER import four_graphs 
-# from B_SPLINE_SOLVER.wrapper import *
-# import B_SPLINE_SOLVER.four_graphs
-import BSpline_solver
+from mesh2d.elliptic_grid import PoissonMesh
+from mesh2d.bspline_wrapper import BSplineWrapper
+
+# Converted CPP
+from B_SPLINE_SOLVER import BSpline_solver
 
 dash.register_page(__name__, path="/page-mesh2d")
 
@@ -25,13 +24,14 @@ INIT_CAMBER = 0
 INIT_CAMBER_POS = 0
 INIT_THICKNESS = 12
 
+
+config = {'scrollZoom': True}
+
 airfoil = Naca4Digits(INIT_CAMBER, INIT_CAMBER_POS, INIT_THICKNESS)
 points_data = None
 mesh = None
 bspline_data = None
 bspline_input = None
-
-
 
 def update_naca_airfoil(camber, camber_pos, thickness):
     return Naca4Digits(int(camber), int(camber_pos), int(thickness))
@@ -40,6 +40,7 @@ def update_naca_airfoil(camber, camber_pos, thickness):
 def update_cst_airfoil(n_order, N1=0.5, N2=1.0):
     return CstAirfoil(n_order, N1=N1, N2=N2)
 
+# Not in use
 def group_nodes(grid):
     nodes_per_cell = []
     next_index = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]
@@ -56,6 +57,34 @@ def group_nodes(grid):
             nodes_per_cell[-1].append((x, y))
     return nodes_per_cell
 
+def single_trace(grid):
+    # nodes_per_cell = []
+
+    x_trace = np.array([np.nan])
+    z_trace = np.array([np.nan])
+
+    next_index = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]
+    for i in range(grid.n_nodes - 1):
+        for j in range(grid.n_nodes - 1):
+            x = np.empty(5)
+            y = np.empty(5)
+            # nodes_per_cell.append([])
+
+            for k in range(4):
+                pi = i + next_index[k][0]
+                pj = j + next_index[k][1]
+                x[k] = grid.X[pi][pj]
+                y[k] = grid.Y[pi][pj]
+
+            x[-1] = np.nan
+            y[-1] = np.nan
+
+            x_trace = np.append(x_trace, x)
+            z_trace = np.append(z_trace, y)
+
+            # nodes_per_cell[-1].append((x, y))
+    return x_trace, z_trace
+
 # Lecture fichier .txt B-spline
 def read_bspline_content(content):
     decoded = base64.b64decode(content.split(',')[1]).decode('utf-8')
@@ -67,6 +96,7 @@ def read_bspline_content(content):
             y.append(float(parts[1]))
     return np.array(x), np.array(y)
 
+# Not in use
 def read_bspline_curve(file_path):
     x, y = [], []
     try:
@@ -82,7 +112,7 @@ def read_bspline_curve(file_path):
         return None, None
 
 
-
+# Not in use
 def downsample_curve(x, y, max_points=300):
     if len(x) > max_points:
         idx = np.linspace(0, len(x) - 1, max_points).astype(int)
@@ -97,6 +127,7 @@ def display_airfoil(airfoil, points=None, mesh=None, bspline_data=None, bspline_
         x, y = airfoil.get_all_surface(1000)
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Airfoil", line=dict(color="red")))
 
+    # Not in use
     if bspline_data is not None:
         xb, yb = bspline_data
         xb, yb = downsample_curve(xb, yb, max_points=250)    
@@ -108,6 +139,7 @@ def display_airfoil(airfoil, points=None, mesh=None, bspline_data=None, bspline_
             marker=dict(size=4, color="blue")
         ))
 
+    # Not in use
     if bspline_init is not None:
         init_x = bspline_init[:, 0]
         init_y = bspline_init[:, 1]
@@ -123,13 +155,12 @@ def display_airfoil(airfoil, points=None, mesh=None, bspline_data=None, bspline_
         fig.add_trace(go.Scatter(x=points[:, 0], y=points[:, 1], mode="markers", name="Points", marker=dict(color="black")))
 
     if mesh is not None:
-        for cell in group_nodes(mesh):
-            x, y = cell[0]
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", line=dict(color="black")))
+        x_trace, z_trace = single_trace(mesh)
+        fig.add_trace(go.Scatter(x=x_trace, y=z_trace, name="Grid", mode="lines", line=dict(color="black")))
 
     fig.update_layout(title="Airfoil Display", xaxis_title="x/c", yaxis_title="y/c",
                       xaxis_range=[-0.1, 1.1], yaxis_range=[-0.4, 0.4], yaxis_scaleanchor="x",
-                      showlegend=True, width=800, height=600)
+                      showlegend=True, width=800, height=600, dragmode="pan")
     return fig
 
 # Ajout interface pour B-Spline avec upload, fit et knots
@@ -155,17 +186,6 @@ bspline_controls = html.Div(id="bspline-controls", children=[
 
 
 layout = html.Div([
-    html.Div(style={
-        'position': 'fixed',
-        'top': 0, 'left': 0, 'right': 0, 'bottom': 0,
-        'backgroundImage': 'url("https://blog.spatial.com/hubfs/AdobeStock_88961670.jpeg")',
-        'backgroundSize': 'cover',
-        'backgroundRepeat': 'no-repeat',
-        'backgroundPosition': 'center',
-        'opacity': '0.75',
-        'zIndex': -1
-    }),
-
     dbc.Container([
         dbc.Row([html.H2("Airfoil Geometry", className="text-center my-4")]),
         dbc.Row([
@@ -173,7 +193,7 @@ layout = html.Div([
                 dcc.Loading(
                     id="loading-graph",
                     type="circle",
-                    children=dcc.Graph(id="airfoil-plot", figure=display_airfoil(airfoil))
+                    children=dcc.Graph(id="airfoil-plot", figure=display_airfoil(airfoil), config={'scrollZoom':True})
                 )
             ], width=8),
             dbc.Col([
@@ -303,42 +323,10 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
     global airfoil, mesh, points_data, bspline_data, bspline_input
     triggered = ctx.triggered_id
 
-
-    if method == "NACA":
-        airfoil = Naca4Digits(camber, camber_pos, thickness)
-        return display_airfoil(airfoil)
-
-    if method == "CST" and triggered == "fit-airfoil" and cst_content:
-        decoded = base64.b64decode(cst_content.split(',')[1]).decode('utf-8')
-        input_stream = io.StringIO(decoded)
-        airfoil = CstAirfoil(n_order)
-        airfoil.import_points(input_stream)
-        airfoil.fit_airfoil()
-        points_data = airfoil.imported_airfoil
-        return display_airfoil(airfoil, points=points_data if show_pts else None)
-    
-    if method == "CST" and (triggered == "n-order-input" or (isinstance(triggered, dict) and triggered.get("type") in ["A_upper", "A_lower"])):
-        airfoil = update_cst_airfoil(n_order, N1=0.5, N2=1.0)
-        if A_upper_values is not None and A_lower_values is not None:
-            airfoil.A_upper = np.array(A_upper_values)
-            airfoil.A_lower = np.array(A_lower_values)
-        return display_airfoil(airfoil)
-
-
-    if method == "B-Spline" and triggered == "fit-bspline" and bspline_content:
-        with open("temp_bspline.dat", "w") as f:
-            decoded = base64.b64decode(bspline_content.split(',')[1]).decode('utf-8')
-            f.write(decoded)
-        BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot)
-        xb, yb = read_bspline_curve("BSpline_curve.txt")
-        bspline_data = (xb, yb)
-        bspline_input = read_bspline_content(bspline_content)
-        return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input))
-    
-
     if triggered == "button-generate-mesh":
-        n_nodes = 2**n_cell + 1
-        n_xc_nodes = int((2**n_cell / 2) + 1)
+
+        n_nodes = 2 ** n_cell + 1
+        n_xc_nodes = int((2 ** n_cell / 2) + 1)
         beta = np.linspace(0, np.pi, n_xc_nodes)
         xc = 0.5 * (1 - np.cos(beta))
 
@@ -346,79 +334,64 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
             xs, ys = airfoil.get_surface_from_x(xc)
         elif method == "NACA":
             xs, ys = airfoil.get_surface_from_x(xc)
-        #elif method == "B-Spline" and bspline_input is not None:
-        #    xs = bspline_input[0]
-        #    ys = bspline_input[1]
-
-        #elif method == "NACA":
-        #    x_full, y_full = airfoil.get_all_surface(1000)
-
-            # Supprimer doublons éventuels
-        #    xy = np.column_stack((x_full, y_full))
-        #    xy = np.unique(xy, axis=0)
-
-            # Trouver bord d’attaque
-        #    idx_min_x = np.argmin(xy[:, 0])
-
-            # Extrados : de trailing edge vers leading edge
-        #    extrados = xy[:idx_min_x + 1][::-1]
-            # Intrados : de leading edge vers trailing edge
-        #    intrados = xy[idx_min_x:]
-
-            # Profil complet
-        #    contour = np.vstack((extrados, intrados[1:]))
-
-            # Rééchantillonnage à n_nodes
-        #    from scipy.interpolate import splprep, splev
-        #    tck, _ = splprep([contour[:, 0], contour[:, 1]], s=0)
-        #    u_fine = np.linspace(0, 1, n_nodes)
-        #    xs, ys = splev(u_fine, tck)
-
-        
-        elif method == "B-Spline" and bspline_input is not None:
-            # Lecture brute
-             xs, ys = bspline_input
-
-            # 1. Supprimer doublons
-             xy = np.column_stack((xs, ys))
-             xy = np.unique(xy, axis=0)
-
-            # 2. Trouver point le plus en avant (bord d'attaque)
-             idx_min_x = np.argmin(xy[:, 0])
-             leading_edge = xy[idx_min_x]
-
-            # 3. Séparer en extrados / intrados
-             extrados = xy[:idx_min_x + 1][::-1]  # Descendant
-             intrados = xy[idx_min_x:]           # Montant
-
-            # 4. Reconstituer contour fermé
-             contour = np.vstack((extrados, intrados[1:]))
-
-            # 5. Rééchantillonnage à n_nodes points
-             from scipy.interpolate import splprep, splev
-             tck, _ = splprep([contour[:, 0], contour[:, 1]], s=0)
-             u_fine = np.linspace(0, 1, n_nodes)
-             x_resampled, y_resampled = splev(u_fine, tck)
-
-             xs = np.array(x_resampled)
-             ys = np.array(y_resampled)
-
+        elif method == "B-Spline":
+            xs, ys = airfoil.get_surface_from_x(xc)
         else:
             return display_airfoil(airfoil)
 
         mesh = PoissonMesh(n_nodes, xs, ys)
-        mesh.ff_radius = 100
+        mesh.ff_radius = 150
         mesh.init_grid()
-        mesh.grid_relaxation(tol=1e-8, max_iter=500)
+        mesh.grid_relaxation(tol=1e-6, max_iter=50_000)
         mesh.write_plot3d("./temp/mesh.xyz")
 
-        if method == "B-Spline":
-            return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input), mesh=mesh)
-        else:
-            return display_airfoil(airfoil, mesh=mesh)
+        # if method == "B-Spline":
+        #     return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input), mesh=mesh)
+        # else:
+        return display_airfoil(airfoil, mesh=mesh)
+
+    else:
+
+        if method == "NACA":
+            airfoil = Naca4Digits(camber, camber_pos, thickness)
+            # return display_airfoil(airfoil)
+
+        if method == "CST" and triggered == "fit-airfoil" and cst_content:
+            decoded = base64.b64decode(cst_content.split(',')[1]).decode('utf-8')
+            input_stream = io.StringIO(decoded)
+            airfoil = CstAirfoil(n_order)
+            airfoil.import_points(input_stream)
+            airfoil.fit_airfoil()
+            points_data = airfoil.imported_airfoil
+            return display_airfoil(airfoil, points=points_data if show_pts else None)
+
+        if method == "CST" and (triggered == "n-order-input" or (isinstance(triggered, dict) and triggered.get("type") in ["A_upper", "A_lower"])):
+            airfoil = update_cst_airfoil(n_order, N1=0.5, N2=1.0)
+            if A_upper_values is not None and A_lower_values is not None:
+                airfoil.A_upper = np.array(A_upper_values)
+                airfoil.A_lower = np.array(A_lower_values)
+            return display_airfoil(airfoil)
+
+
+        if method == "B-Spline" and triggered == "fit-bspline" and bspline_content:
+            with open("temp_bspline.dat", "w") as f:
+                decoded = base64.b64decode(bspline_content.split(',')[1]).decode('utf-8')
+                f.write(decoded)
+            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot)
+
+            # curve = np.loadtxt("BSpline_curve.txt", dtype=float, usecols=(0, 1))
+            airfoil = BSplineWrapper()
+            airfoil.read_bspline_curve("BSpline_curve.txt")
+            # airfoil.
+
+            # xb, yb = read_bspline_curve("BSpline_curve.txt")
+            # bspline_data = (xb, yb)
+            # bspline_input = read_bspline_content(bspline_content)
+            # return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input))
+
+            return display_airfoil(airfoil)
 
     return display_airfoil(airfoil, points=points_data if show_pts else None)
-
 
 
 @dash.callback(
@@ -428,5 +401,3 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
 )
 def download_mesh(n):
     return dcc.send_file("./temp/mesh.xyz")
-
-

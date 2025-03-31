@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 
 # Imports the Naca4Digits class
-from naca4digits import Naca4Digits
+from naca4digits_deprecated import Naca4Digits
 
 """
 ----- NACA 4 Digits airfoil -----

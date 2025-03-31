@@ -12,20 +12,6 @@ CSV_FILE = "user_inputs.csv"
 
 # 🔹 Layout for the Home Page
 layout = html.Div([
-    # Image de fond fixe en plein écran
-    html.Div(style={
-        'position': 'fixed',
-        'top': 0,
-        'left': 0,
-        'right': 0,
-        'bottom': 0,
-        'backgroundImage': 'url("https://blog.spatial.com/hubfs/AdobeStock_88961670.jpeg")',
-        'backgroundSize': 'cover',
-        'backgroundRepeat': 'no-repeat',
-        'backgroundPosition': 'center',
-        'opacity': '0.75',
-        'zIndex': -1
-    }),
 
     # # VLM Solver Inputs
     # html.H2("Vortex Lattice Method (VLM) Inputs"),

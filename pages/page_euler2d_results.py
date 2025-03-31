@@ -21,7 +21,8 @@ def parse_mesh(file_path):
     nx, ny = map(int, lines[0].split())
     x_grid = np.array([float(value) for value in lines[1: 1 + nx * ny]])
     y_grid = np.array([float(value) for value in lines[1 + nx * ny: 1 + 2 * nx * ny]])
-    return nx, ny, -y_grid.reshape(ny, nx), -x_grid.reshape(ny, nx)
+
+    return nx, ny, x_grid.reshape(ny, nx), y_grid.reshape(ny, nx)
 
 
 def parse_test_q(file_path, nx, ny):
@@ -39,108 +40,112 @@ def create_surface_plot(variable, title, colorbar_title, x_2d, y_2d):
     max_val = np.max(variable)
 
     # Create a single subplot (remove the second column)
-    fig = make_subplots(
-        rows=1, cols=1,
-        specs=[[{"type": "surface"}]],
-        subplot_titles=[title]
-    )
+    # fig = make_subplots(
+    #     rows=1, cols=1,
+    #     specs=[[{"type": "surface"}]],
+    #     subplot_titles=[title]
+    # )
 
-    # fig = go.Figure()
+    fig = go.Figure()
 
     # Main surface plot with integrated colorbar
-    fig.add_trace(
-        go.Surface(
-            x=x_2d,
-            y=y_2d,
-            z=z,
-            surfacecolor=variable,
-            colorscale='Magma',
-            lighting=dict(ambient=1.0, diffuse=0.0),
-            showscale=True,
-            colorbar=dict(
-                title=f"{colorbar_title}<br>Min: {min_val:.2f}<br>Max: {max_val:.2f}",
-                tickvals=[min_val, max_val],
-                ticktext=[f"{min_val:.2f}", f"{max_val:.2f}"],
-                tickfont=dict(size=10),
-                thickness=50,
-                len=0.75
-            )
-        )
-    )
+    # fig.add_trace(
+    #     go.Surface(
+    #         x=x_2d,
+    #         y=y_2d,
+    #         z=z,
+    #         surfacecolor=variable,
+    #         colorscale='Magma',
+    #         lighting=dict(ambient=1.0, diffuse=0.0),
+    #         showscale=True,
+    #         colorbar=dict(
+    #             title=f"{colorbar_title}<br>Min: {min_val:.2f}<br>Max: {max_val:.2f}",
+    #             tickvals=[min_val, max_val],
+    #             ticktext=[f"{min_val:.2f}", f"{max_val:.2f}"],
+    #             tickfont=dict(size=10),
+    #             thickness=50,
+    #             len=0.75
+    #         )
+    #     )
+    # )
 
-    # grid_x = np.linspace(-5, 5, 1_000)
-    # grid_z = np.linspace(-5, 5, 1_000)
-    # grid_X, grid_Z = np.meshgrid(grid_x, grid_z)
-    #
-    # # points = np.column_stack((x_2d, y_2d))
-    #
-    # x_flat = x_2d.flatten()
-    # y_flat = y_2d.flatten()
-    # variable = variable.flatten()
-    #
-    # points = np.column_stack((x_flat, y_flat))
-    # print(f"points shape = {points.shape}")
-    #
-    # # print(f"point shape: {points.shape}")
-    # grid_v = griddata(points, variable, (grid_X, grid_Z), method='cubic', rescale=False)
-    # print()
-    # fig.add_trace(go.Contour(x=grid_x,
-    #                          y=grid_z,
-    #                          z=grid_v,
-    #                          )
-    #               )
+    grid_x = np.linspace(-5, 5, 1_000)
+    grid_z = np.linspace(-5, 5, 1_000)
+    grid_X, grid_Z = np.meshgrid(grid_x, grid_z)
+
+    airfoil_len = 2*x_2d.shape[1]
+
+    x_flat = x_2d.flatten()
+    y_flat = y_2d.flatten()
+    variable = variable.flatten()
+
+    points = np.column_stack((x_flat, y_flat))
+    grid_v = griddata(points, variable, (grid_X, grid_Z), method='cubic', rescale=False)
+
+    fig.add_trace(go.Contour(x=grid_x,
+                             y=grid_z,
+                             z=grid_v,
+                             line=dict(width=0),
+                             # line_smoothing=0.85,
+                             contours_coloring='heatmap',
+                             ),
+                  )
+
+    # fig.add_trace(go.Scatter(x=x_flat,y=y_flat, mode="markers", marker=dict(size=4, color="black")))
+    # fig.add_trace(go.Scatter(x=x_2d[0,:airfoil_len+1], y=y_2d[0,:airfoil_len+1], fill='toself', fillcolor='white', mode="lines+markers", marker=dict(size=4, color="black")))
+    fig.add_trace(go.Scatter(x=x_2d[0,:airfoil_len+1], y=y_2d[0,:airfoil_len+1], fill='toself', fillcolor='white', mode='none'))
 
     # Layout adjustments
-    fig.update_layout(
-        width=1200,
-        height=600,
-        margin=dict(l=0, r=0, b=0, t=0),
-        scene=dict(
-            xaxis=dict(
-                range=[-0.3, 0.3],
-                showgrid=False,
-                showline=False,
-                zeroline=False,
-                visible=False
-            ),
-            yaxis=dict(
-                range=[-1.1, 0.1],
-                showgrid=False,
-                showline=False,
-                zeroline=False,
-                visible=False
-            ),
-            zaxis=dict(
-                showticklabels=False,
-                title='',
-                visible=False,
-                showgrid=False,
-                showline=False,
-                zeroline=False
-            ),
-            camera=dict(
-                eye=dict(x=0, y=0, z=1.2),
-                # projection=dict(type='orthographic')
-            ),
-            aspectmode='manual',
-            aspectratio=dict(x=1, y=1, z=0)
-        ),
-        # dragmode="pan",
-    )
+    # fig.update_layout(
+    #     width=1200,
+    #     height=600,
+    #     margin=dict(l=0, r=0, b=0, t=0),
+    #     scene=dict(
+    #         xaxis=dict(
+    #             range=[-0.3, 0.3],
+    #             showgrid=False,
+    #             showline=False,
+    #             zeroline=False,
+    #             visible=False
+    #         ),
+    #         yaxis=dict(
+    #             range=[-1.1, 0.1],
+    #             showgrid=False,
+    #             showline=False,
+    #             zeroline=False,
+    #             visible=False
+    #         ),
+    #         zaxis=dict(
+    #             showticklabels=False,
+    #             title='',
+    #             visible=False,
+    #             showgrid=False,
+    #             showline=False,
+    #             zeroline=False
+    #         ),
+    #         camera=dict(
+    #             eye=dict(x=0, y=0, z=1.2),
+    #             # projection=dict(type='orthographic')
+    #         ),
+    #         aspectmode='manual',
+    #         aspectratio=dict(x=1, y=1, z=0)
+    #     ),
+    #     # dragmode="pan",
+    # )
     # TODO: Review figure is upside down
 
     # fig.update_layout(modebar_remove=['orbitRotation', 'tableRotation'])
 
-    # fig.update_layout(
-    #     width=1200,
-    #     height=600,
-    #     xaxis_title="x/c",
-    #     yaxis_title="y/c",
-    #     xaxis_range=[-0.1, 1.1],
-    #     yaxis_range=[-0.4, 0.4],
-    #     yaxis_scaleanchor="x",
-    #     dragmode="pan",
-    # )
+    fig.update_layout(
+        width=1200,
+        height=600,
+        xaxis_title="x/c",
+        yaxis_title="y/c",
+        xaxis_range=[-0.1, 1.1],
+        yaxis_range=[-0.4, 0.4],
+        yaxis_scaleanchor="x",
+        dragmode="pan",
+    )
 
     return fig
 
@@ -170,7 +175,7 @@ layout = dbc.Container([
 
     dbc.Row(
         dbc.Col(
-            dcc.Graph(id='result-plot', style={'height': '70vh', 'width': '70%', 'margin': 'auto'}),
+            dcc.Graph(id='result-plot', config={'scrollZoom':True}, style={'height': '70vh', 'width': '70%', 'margin': 'auto'}),
             width=100,
             className="d-flex justify-content-center"
         )

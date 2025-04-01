@@ -180,6 +180,27 @@ layout = html.Div([
 
             dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2")
         ])
+        
+ #########DEBUT CHANGEMENT##################               
+        ,dbc.Row([
+    dbc.Col([
+        html.Label("Upload Mesh (.xyz)"),
+        dcc.Upload(
+            id='upload-mesh',
+            children=html.Div(['Drag and Drop or ', html.A('Select a mesh file (.xyz)')]),
+            style={
+                'width': '100%', 'height': '60px', 'lineHeight': '60px',
+                'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
+                'textAlign': 'center', 'marginBottom': '10px'
+            },
+            multiple=False
+        ),
+        html.Div(id='upload-mesh-status')
+    ], width=4),
+])
+        
+ #########FIN CHANGEMENT##################       
+        
     ], className="mb-2"),
 
     dcc.Loading(
@@ -191,6 +212,37 @@ layout = html.Div([
     html.Div(id='visualization-redirect', style={'display': 'none'})
 ])
 
+#########DEBUT CHANGEMENT################## 
+import os 
+import base64
+UPLOAD_FOLDER = "temp"
+
+@dash.callback(
+    Output('upload-mesh-status', 'children'),  
+    Output('upload-mesh', 'filename', allow_duplicate=True),  
+    Input('upload-mesh', 'contents'), 
+    State('upload-mesh', 'filename'),  
+    prevent_initial_call='initial_duplicate'  
+)
+
+def save_uploaded_mesh(contents, filename):
+    if contents is None:
+        return dash.no_update, dash.no_update
+
+    
+    filepath = os.path.join(UPLOAD_FOLDER, 'user_mesh.xyz')
+
+    
+    content_type, content_string = contents.split(',')
+    new_file = base64.b64decode(content_string)
+
+    
+    with open(filepath, 'wb') as f:
+        f.write(new_file)
+
+    return dbc.Alert(f"✅ Mesh '{filename}' uploaded successfully!", color="success"), filename
+
+ #########FIN CHANGEMENT##################       
 # ======================================================================
 # Visualization Page
 # ======================================================================
@@ -261,12 +313,16 @@ viz_layout = dbc.Container([
 )
 def run_simulation(n_clicks, num_threads, Mach, alpha, CFL_number, p_inf, T_inf,
                    multigrid, residual_smoothing, k2, k4, it_max):
+     #########DEBUT CHANGEMENT##################      
     if not n_clicks:
         return dash.no_update, dash.no_update
 
-    mesh_file = "temp/mesh.xyz"
-
-    # Generate input file
+    # Choix du maillage : uploadé ou par défaut
+    uploaded_mesh_path = "temp/user_mesh.xyz"
+    default_mesh_path = "temp/mesh.xyz"
+    mesh_file = uploaded_mesh_path if os.path.exists(uploaded_mesh_path) else default_mesh_path
+     #########FIN CHANGEMENT##################       
+    # Génération du fichier d'entrée
     input_content = f"""num_threads = {num_threads}
 mesh_file = {mesh_file}
 Mach = {Mach}
@@ -285,10 +341,10 @@ checkpoint_file = checkpoint_test.txt"""
     with open("input.txt", "w") as f:
         f.write(input_content)
 
-    # Run solver
+    # Exécution du solveur
     try:
         euler_solver.solve("input.txt")
-        status = dbc.Alert("✅ Simulation completed successfully!", color="success")
+        status = dbc.Alert("Simulation completed successfully!", color="success")
         redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
     except Exception as e:
         status = dbc.Alert(f" Error: {str(e)}", color="danger")

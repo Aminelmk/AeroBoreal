@@ -129,7 +129,11 @@ class Vector3:
 		ds = Vector3(dx,dy,dz)
 		return (pts + ds)
       
+<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
 def mesh_wing(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
+========
+def mesh_wing(ny, nx, y0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
+>>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
     x1 = np.zeros([nx+1,ny+1])
     y1 = np.zeros([nx+1,ny+1])
     z1 = np.zeros([nx+1,ny+1])
@@ -185,6 +189,65 @@ def mesh_wing(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, tw
             x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
             y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
             z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
+    
+        return x_mesh, y_mesh, z_mesh
+    
+def mesh_wing_breaking_point(ny, nx, y0, span, cord, breaking_point, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
+    x1 = np.zeros([nx+1,ny+1])
+    y1 = np.zeros([nx+1,ny+1])
+    z1 = np.zeros([nx+1,ny+1])
+    xlinspace = np.linspace(0,cord,nx+1)
+    # ylinspace = np.linspace(0,span,ny+1) # Distribution linéaire des y
+    theta = np.linspace(np.pi/2,np.pi,ny+1)
+    ylinspace = -1*np.cos(theta)*span
+    #zlinspace = np.linspace(0,span*np.tan(np.deg2rad(diedre)),ny+1) # Old version qui créer une courbe au lieu d'une ligne droite
+    zlinspace = (ylinspace)*np.tan(np.deg2rad(diedre))
+    angletwist_linespace = -1*np.cos(theta)*twist
+    angletwist_linespace[0]=0
+    
+    for j in range(ny+1):
+        for i in range(nx+1):
+            y1[i,j] = ylinspace[j]
+    for i in range(nx+1):
+        for j in range(ny+1):
+            x1[i,j] = xlinspace[i] + y1[i,j]*np.tan(np.deg2rad(sweep)) + y1[i,j]/span*cord*(1-lam)/2*(1 - 2*i/nx)
+    for j in range(ny+1):
+        for i in range(nx+1):
+            z1[i,j] = zlinspace[j]
+    
+    for j in range(ny+1) :
+        corde = x1[-1, j] - x1[0, j]
+        for i in range(nx+1) :
+            z1[i, j] += (corde/4-x1[i,j])*np.tan(np.deg2rad(angletwist_linespace[j]))
+    
+    x1 *= factor
+    y1 *= factor
+    z1 *= factor
+    
+    x1 += LE_position
+    
+    if vstab :
+        return x1, z1, y1
+    
+    else :
+        x_left = np.flip(x1, 1)
+        y_left = np.flip(-y1, 1)
+        z_left = np.flip(z1, 1)
+        
+        x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2*(ny+1)))
+        y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2*(ny+1)))
+        z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2*(ny+1)))
+        for i in range(1, nx+1) :
+            x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x1[i]))))
+            y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y1[i]))))
+            z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z1[i]))))
+        
+        x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
+        y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
+        z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
+    
+    
+    
     
         return x_mesh, y_mesh, z_mesh
 
@@ -248,7 +311,11 @@ def lovell_mesh_wing(nx, ny, LE_position, factor=1, vstab=False, y0=0, z0=0) :
     else :
         return x_mesh, y_mesh, z_mesh
 
+<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
 def WingElliptic(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twistTip=0, LE_position=0, factor=1, vstab=False):
+========
+def WingElliptic(ny, nx, y0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twistTip=0, LE_position=0, factor=1, vstab=False):
+>>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
     theta_i = np.linspace(0.5*np.pi, np.pi, ny+1)
     y_i = -1*span*np.cos(theta_i)
     x1 = np.zeros([nx+1,ny+1])
@@ -278,9 +345,13 @@ def WingElliptic(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0,
             z1[i,j] = p1.z
     
     x1 += LE_position
+<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
     z1 += z0
     y1 += y0
 
+========
+    
+>>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
     x_left = np.flip(x1, 1)
     y_left = np.flip(-y1, 1)
     z_left = np.flip(z1, 1)
@@ -293,10 +364,16 @@ def WingElliptic(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0,
         y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y1[i]))))
         z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z1[i]))))
     
+<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
     if y0 == 0 :
         x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
         y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
         z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
+========
+    x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
+    y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
+    z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
+>>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
 
     return x_mesh, y_mesh , z_mesh
 
@@ -405,10 +482,16 @@ def plot_wing(nx, ny, x, y, z, sym=True, color="tab:blue") :
 # save_mesh(nx_fuse, nz_fuse, X_fuse, np.zeros_like(X_fuse), Z_fuse, "mesh_fuse_vertical.txt")
 # save_vtu_mesh(X_fuse, np.zeros_like(X_fuse), Z_fuse, "mesh_fuse_vertical.vtu")
 ########################################### Generate and Save Meshes ############################################
+<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
 # Wing mesh    
 '''        
 nx_wing = 3
 ny_wing = 20
+========
+# Wing mesh            
+nx_wing = 3
+ny_wing = 5
+>>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
 AR = 9 #CRM 9.0
 sweep = 0 #CRM 35 deg
 lam = 1.0

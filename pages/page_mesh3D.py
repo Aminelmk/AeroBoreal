@@ -439,7 +439,7 @@ def save_mesh3d(nx, ny, download_clicks, show_nodes):
     triggered_id = ctx.triggered_id
 
     if triggered_id == "button-download-mesh3d":
-        save_mesh(nx, ny, mesh[1], mesh[0], mesh[1], './temp/mesh3d.x')
+        save_mesh(nx, 2*ny, mesh[0], mesh[1], mesh[2], './temp/mesh3d.x')
 
         # Afficher le message "Mesh downloaded"
         return "Mesh downloaded to ./temp/mesh3d.x !", {"color": "green", "fontWeight": "bold"}

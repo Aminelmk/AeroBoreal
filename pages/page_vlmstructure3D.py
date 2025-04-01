@@ -25,7 +25,7 @@ y_0_profils = {" ".join(row['col1_euler'] for row in datapath)}
 profils_paths = SOLVEUR_COUPLE/database/{" SOLVEUR_COUPLE/database/".join(row['col2_euler'] for row in datapath)}
 it_max = {it_max}
 wing_mesh_path = SOLVEUR_COUPLE/{wingmesh}
-nb_nodes = {nodes}
+nb_nodes = {nodes+1}
 quarter_chord_ratio = {quatercord}"""
 
     with open("SOLVEUR_COUPLE/input_main.txt", "w") as f:
@@ -83,7 +83,7 @@ layout = html.Div([
                 ], width=2),
                 dbc.Col([
                     html.Label("Wing Mesh Path"),
-                    dcc.Input(id='vlm_wingmesh', type='text', value="mesh_wing.txt", className="mb-2"),
+                    dcc.Input(id='vlm_wingmesh', type='text', value="../temp/mesh3d.x", className="mb-2"),
                 ], width=2),
             ], className="mb-3", justify="center"),
 

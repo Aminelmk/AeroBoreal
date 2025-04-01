@@ -225,17 +225,27 @@ def initialize_results(pathname):
     except Exception as e:
         return [], None
 
-
+ #####DEBUT CHANGEMENT########
+def maillage_depuis_input():
+    with open("input.txt", "r") as f:
+        for line in f:
+            if line.startswith("mesh_file"):
+                return line.split("=")[1].strip()
+    return "temp/mesh.xyz"
 @dash.callback(
     Output('result-plot', 'figure'),
     [Input('graph-selector', 'value')],
     [State('url', 'pathname')]
 )
+
 def update_selected_graph(selected_graph, pathname):
     print(f"Graph update triggered - pathname: {pathname}, selected_graph: {selected_graph}")
 
     try:
-        nx, ny, x_2d, y_2d = parse_mesh("temp/mesh.xyz")
+
+        mesh_path = maillage_depuis_input()
+        nx, ny, x_2d, y_2d = parse_mesh(mesh_path)
+        #####FIN CHANGEMENT########
         rho, rho_u, rho_v, rho_E = parse_test_q("test.q", nx, ny)
 
         print(f"Mesh loaded - nx: {nx}, ny: {ny}")  # Debugging

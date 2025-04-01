@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
+import subprocess
 from SOLVEUR_COUPLE import solveur_couple 
 
 from euler2d import euler_solver
@@ -203,6 +204,7 @@ def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, wingmesh, nodes, quatercor
     # Run solver
     try:
         solveur_couple.solve("SOLVEUR_COUPLE/input_main.txt")
+        subprocess.run(["python", "SOLVEUR_COUPLE/write_vtu.py"], check=True)
         status = dbc.Alert("✅ Simulation completed successfully!", color="success")
         #redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
     except Exception as e:

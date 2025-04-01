@@ -35,8 +35,10 @@ navbar = dbc.NavbarSimple(
         dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Mesh", href="/page-mesh2d"),
+                dbc.DropdownMenuItem("Mesh 2D", href="/page-mesh2d"),
+                dbc.DropdownMenuItem("Mesh 3D", href="/page-mesh3d"),
                 dbc.DropdownMenuItem("Euler 2D", href="/page-euler2d"),
+                dbc.DropdownMenuItem("VLM-Structure 3D", href="/pages-vlmstructure3D"),
             ],
             nav=True,
             in_navbar=True,

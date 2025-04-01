@@ -1,0 +1,11 @@
+Mach = 0.5
+alpha = 5
+p_inf = 100000
+T_inf = 300
+couplage_Euler = 1
+y_0_profils = -4.5 0 4.5
+profils_paths = SOLVEUR_COUPLE/database/x.6 SOLVEUR_COUPLE/database/x.6 SOLVEUR_COUPLE/database/x.6
+it_max = 100
+wing_mesh_path = SOLVEUR_COUPLE/mesh_wing.txt
+nb_nodes = 3
+quarter_chord_ratio = 0.25

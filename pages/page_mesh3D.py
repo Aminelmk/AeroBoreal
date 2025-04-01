@@ -244,14 +244,14 @@ layout = html.Div([
                                     html.Label("Cord (m)"),
                                     dcc.Input(id='custom_cord', type='number', value=1, className="mb-2"),
 
-                                    html.Label("Lamba [0,1]"),
+                                    html.Label("Taper Ratio [0,1]"),
                                     #dcc.Input(id='custom_lam', type='number', value=1, className="mb-2"),
                                     dcc.Slider(0, 1, step=0.1, value=1, id="custom_lam"),
 
                                     html.Label("Sweep Angle (°)"),
                                     dcc.Input(id='custom_sweep', type='number', value=0, className="mb-2"),
 
-                                    html.Label("Diedre Angle (°)"),
+                                    html.Label("Dihedral Angle (°)"),
                                     dcc.Input(id='custom_diedre', type='number', value=0, className="mb-2"),
 
                                     html.Label("Twist Angle (°)"),

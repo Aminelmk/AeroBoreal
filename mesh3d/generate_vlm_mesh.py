@@ -4,383 +4,321 @@ from mpl_toolkits.mplot3d import Axes3D
 from mesh3d.write_vtu import save_vtu_mesh
 
 from math import *
+
+
 class Vector3:
-	def __init__(self,x,y,z):
-		self.x = x
-		self.y = y
-		self.z = z
-	def __add__(self,other):
-		x = self.x+other.x
-		y = self.y+other.y
-		z = self.z+other.z
-		return Vector3(x,y,z)
-	def __sub__(self,other):
-		x = self.x-other.x
-		y = self.y-other.y
-		z = self.z-other.z
-		return Vector3(x,y,z)
-	def __mul__(self,value):
-		x = self.x*value
-		y = self.y*value
-		z = self.z*value
-		return Vector3(x,y,z)
-	def __truediv__(self,value):
-		x = self.x/value
-		y = self.y/value
-		z = self.z/value
-		return Vector3(x,y,z)
-	def __str__(self):
-		return 'X\tY\tZ\n%f\t%f\t%f'%(self.x,self.y,self.z)
-	def __getitem__(self,index):
-		if (index == 0):
-			return self.x
-		elif (index == 1):
-			return self.y
-		elif (index == 2):
-			return self.z
-		else:
-			print('Error: Index out of range for Vector3')
-			exit()
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
-	def dot(self,other):
-		x = self.x*other.x
-		y = self.y*other.y
-		z = self.z*other.z
-		return x+y+z
+    def __add__(self, other):
+        x = self.x + other.x
+        y = self.y + other.y
+        z = self.z + other.z
+        return Vector3(x, y, z)
 
-	def div(self,other):
-		x = self.x/other.x
-		y = self.y/other.y
-		z = self.z/other.z
-		return x+y+z
+    def __sub__(self, other):
+        x = self.x - other.x
+        y = self.y - other.y
+        z = self.z - other.z
+        return Vector3(x, y, z)
 
-	def crossProduct(self,other):
-		x = self.y*other.z-self.z*other.y
-		y = self.z*other.x-self.x*other.z
-		z = self.x*other.y-self.y*other.x
-		return Vector3(x,y,z)
+    def __mul__(self, value):
+        x = self.x * value
+        y = self.y * value
+        z = self.z * value
+        return Vector3(x, y, z)
 
-	def Magnitude(self):
-		return sqrt(self.x**2 + self.y**2 + self.z**2)
+    def __truediv__(self, value):
+        x = self.x / value
+        y = self.y / value
+        z = self.z / value
+        return Vector3(x, y, z)
 
-	def Normalized(self):
-		mag = self.Magnitude()
-		return Vector3(self.x/mag,self.y/mag,self.z/mag)
+    def __str__(self):
+        return 'X\tY\tZ\n%f\t%f\t%f' % (self.x, self.y, self.z)
 
-	def array(self):
-		a = np.zeros(3)
-		a[0] = self.x
-		a[1] = self.y
-		a[2] = self.z
-		return a
+    def __getitem__(self, index):
+        if (index == 0):
+            return self.x
+        elif (index == 1):
+            return self.y
+        elif (index == 2):
+            return self.z
+        else:
+            print('Error: Index out of range for Vector3')
+            exit()
 
-	def rotate(self,theta,phi,psi):
-		rotationEuler = np.zeros((3,3))
-		C_theta = cos(theta*pi/180.0)
-		C_phi = cos(phi*pi/180.0)
-		C_psi = cos(psi*pi/180.0)
-		S_theta = sin(theta*pi/180.0)
-		S_phi = sin(phi*pi/180.0)
-		S_psi = sin(psi*pi/180.0)
-		rotationEuler[0,0] = C_psi*C_theta 
-		rotationEuler[0,1] = C_psi*S_theta*S_phi-S_psi*C_phi 
-		rotationEuler[0,2] = C_psi*S_theta*C_phi+S_psi*S_phi
-		rotationEuler[1,0] = S_psi*C_theta 
-		rotationEuler[1,1] = S_psi*S_theta*S_phi+C_psi*C_phi 
-		rotationEuler[1,2] = S_psi*S_theta*C_phi-C_psi*S_phi
-		rotationEuler[2,0] = -S_theta      
-		rotationEuler[2,1] = C_theta*S_phi                   
-		rotationEuler[2,2] = C_theta*C_phi
-		pt = np.zeros(3)
-		pt[0] = self.x
-		pt[1] = self.y
-		pt[2] = self.z
-		pt = rotationEuler.dot(pt)
-		return Vector3(pt[0],pt[1],pt[2])
+    def dot(self, other):
+        x = self.x * other.x
+        y = self.y * other.y
+        z = self.z * other.z
+        return x + y + z
 
-	def move(self,dx,dy,dz):
-		pt = Vector3(self.x,self.y,self.z)
-		ds = Vector3(dx,dy,dz)
-		return (pt + ds)
+    def div(self, other):
+        x = self.x / other.x
+        y = self.y / other.y
+        z = self.z / other.z
+        return x + y + z
 
-	def rotateMove(self,theta,phi,psi,axis,dx,dy,dz):
-		rotationEuler = np.zeros((3,3))
-		C_theta = cos(theta*pi/180.0)
-		C_phi = cos(phi*pi/180.0)
-		C_psi = cos(psi*pi/180.0)
-		S_theta = sin(theta*pi/180.0)
-		S_phi = sin(phi*pi/180.0)
-		S_psi = sin(psi*pi/180.0)
-		rotationEuler[0,0] = C_psi*C_theta 
-		rotationEuler[0,1] = C_psi*S_theta*S_phi-S_psi*C_phi 
-		rotationEuler[0,2] = C_psi*S_theta*C_phi+S_psi*S_phi
-		rotationEuler[1,0] = S_psi*C_theta 
-		rotationEuler[1,1] = S_psi*S_theta*S_phi+C_psi*C_phi 
-		rotationEuler[1,2] = S_psi*S_theta*C_phi-C_psi*S_phi
-		rotationEuler[2,0] = -S_theta      
-		rotationEuler[2,1] = C_theta*S_phi                   
-		rotationEuler[2,2] = C_theta*C_phi
-		pt = np.zeros(3)
-		pt[0] = self.x - axis.x
-		pt[1] = self.y - axis.y
-		pt[2] = self.z - axis.z
-		pt = rotationEuler.dot(pt)
-		pts = Vector3(pt[0] + axis.x,pt[1] + axis.y,pt[2] + axis.z)
-		ds = Vector3(dx,dy,dz)
-		return (pts + ds)
-      
-<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
-def mesh_wing(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
-========
-def mesh_wing(ny, nx, y0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
->>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
-    x1 = np.zeros([nx+1,ny+1])
-    y1 = np.zeros([nx+1,ny+1])
-    z1 = np.zeros([nx+1,ny+1])
-    xlinspace = np.linspace(0,cord,nx+1)
+    def crossProduct(self, other):
+        x = self.y * other.z - self.z * other.y
+        y = self.z * other.x - self.x * other.z
+        z = self.x * other.y - self.y * other.x
+        return Vector3(x, y, z)
+
+    def Magnitude(self):
+        return sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+
+    def Normalized(self):
+        mag = self.Magnitude()
+        return Vector3(self.x / mag, self.y / mag, self.z / mag)
+
+    def array(self):
+        a = np.zeros(3)
+        a[0] = self.x
+        a[1] = self.y
+        a[2] = self.z
+        return a
+
+    def rotate(self, theta, phi, psi):
+        rotationEuler = np.zeros((3, 3))
+        C_theta = cos(theta * pi / 180.0)
+        C_phi = cos(phi * pi / 180.0)
+        C_psi = cos(psi * pi / 180.0)
+        S_theta = sin(theta * pi / 180.0)
+        S_phi = sin(phi * pi / 180.0)
+        S_psi = sin(psi * pi / 180.0)
+        rotationEuler[0, 0] = C_psi * C_theta
+        rotationEuler[0, 1] = C_psi * S_theta * S_phi - S_psi * C_phi
+        rotationEuler[0, 2] = C_psi * S_theta * C_phi + S_psi * S_phi
+        rotationEuler[1, 0] = S_psi * C_theta
+        rotationEuler[1, 1] = S_psi * S_theta * S_phi + C_psi * C_phi
+        rotationEuler[1, 2] = S_psi * S_theta * C_phi - C_psi * S_phi
+        rotationEuler[2, 0] = -S_theta
+        rotationEuler[2, 1] = C_theta * S_phi
+        rotationEuler[2, 2] = C_theta * C_phi
+        pt = np.zeros(3)
+        pt[0] = self.x
+        pt[1] = self.y
+        pt[2] = self.z
+        pt = rotationEuler.dot(pt)
+        return Vector3(pt[0], pt[1], pt[2])
+
+    def move(self, dx, dy, dz):
+        pt = Vector3(self.x, self.y, self.z)
+        ds = Vector3(dx, dy, dz)
+        return (pt + ds)
+
+    def rotateMove(self, theta, phi, psi, axis, dx, dy, dz):
+        rotationEuler = np.zeros((3, 3))
+        C_theta = cos(theta * pi / 180.0)
+        C_phi = cos(phi * pi / 180.0)
+        C_psi = cos(psi * pi / 180.0)
+        S_theta = sin(theta * pi / 180.0)
+        S_phi = sin(phi * pi / 180.0)
+        S_psi = sin(psi * pi / 180.0)
+        rotationEuler[0, 0] = C_psi * C_theta
+        rotationEuler[0, 1] = C_psi * S_theta * S_phi - S_psi * C_phi
+        rotationEuler[0, 2] = C_psi * S_theta * C_phi + S_psi * S_phi
+        rotationEuler[1, 0] = S_psi * C_theta
+        rotationEuler[1, 1] = S_psi * S_theta * S_phi + C_psi * C_phi
+        rotationEuler[1, 2] = S_psi * S_theta * C_phi - C_psi * S_phi
+        rotationEuler[2, 0] = -S_theta
+        rotationEuler[2, 1] = C_theta * S_phi
+        rotationEuler[2, 2] = C_theta * C_phi
+        pt = np.zeros(3)
+        pt[0] = self.x - axis.x
+        pt[1] = self.y - axis.y
+        pt[2] = self.z - axis.z
+        pt = rotationEuler.dot(pt)
+        pts = Vector3(pt[0] + axis.x, pt[1] + axis.y, pt[2] + axis.z)
+        ds = Vector3(dx, dy, dz)
+        return (pts + ds)
+
+
+def mesh_wing(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1,
+              vstab=False):
+    x1 = np.zeros([nx + 1, ny + 1])
+    y1 = np.zeros([nx + 1, ny + 1])
+    z1 = np.zeros([nx + 1, ny + 1])
+    xlinspace = np.linspace(0, cord, nx + 1)
     # ylinspace = np.linspace(0,span,ny+1) # Distribution linéaire des y
-    theta = np.linspace(np.pi/2,np.pi,ny+1)
-    ylinspace = -1*np.cos(theta)*span
-    #zlinspace = np.linspace(0,span*np.tan(np.deg2rad(diedre)),ny+1) # Old version qui créer une courbe au lieu d'une ligne droite
-    zlinspace = (ylinspace)*np.tan(np.deg2rad(diedre))
-    angletwist_linespace = -1*np.cos(theta)*twist
-    angletwist_linespace[0]=0
-    
-    for j in range(ny+1):
-        for i in range(nx+1):
-            y1[i,j] = ylinspace[j]
-    for i in range(nx+1):
-        for j in range(ny+1):
-            x1[i,j] = xlinspace[i] + y1[i,j]*np.tan(np.deg2rad(sweep)) + y1[i,j]/span*cord*(1-lam)/2*(1 - 2*i/nx)
-    for j in range(ny+1):
-        for i in range(nx+1):
-            z1[i,j] = zlinspace[j]
-    
-    for j in range(ny+1) :
+    theta = np.linspace(np.pi / 2, np.pi, ny + 1)
+    ylinspace = -1 * np.cos(theta) * span
+    # zlinspace = np.linspace(0,span*np.tan(np.deg2rad(diedre)),ny+1) # Old version qui créer une courbe au lieu d'une ligne droite
+    zlinspace = (ylinspace) * np.tan(np.deg2rad(diedre))
+    angletwist_linespace = -1 * np.cos(theta) * twist
+    angletwist_linespace[0] = 0
+
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            y1[i, j] = ylinspace[j]
+    for i in range(nx + 1):
+        for j in range(ny + 1):
+            x1[i, j] = xlinspace[i] + y1[i, j] * np.tan(np.deg2rad(sweep)) + y1[i, j] / span * cord * (1 - lam) / 2 * (
+                        1 - 2 * i / nx)
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            z1[i, j] = zlinspace[j]
+
+    for j in range(ny + 1):
         corde = x1[-1, j] - x1[0, j]
-        for i in range(nx+1) :
-            z1[i, j] += (corde/4-x1[i,j])*np.tan(np.deg2rad(angletwist_linespace[j]))
-    
+        for i in range(nx + 1):
+            z1[i, j] += (corde / 4 - x1[i, j]) * np.tan(np.deg2rad(angletwist_linespace[j]))
+
     x1 *= factor
     y1 *= factor
     z1 *= factor
-    
+
     x1 += LE_position
     z1 += z0
     y1 += y0
-    
-    if vstab :
+
+    if vstab:
         return x1, z1, y1
-    
-    else :
+
+    else:
         x_left = np.flip(x1, 1)
         y_left = np.flip(-y1, 1)
         z_left = np.flip(z1, 1)
-        
-        x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2*(ny+1)))
-        y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2*(ny+1)))
-        z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2*(ny+1)))
-        for i in range(1, nx+1) :
+
+        x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2 * (ny + 1)))
+        y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2 * (ny + 1)))
+        z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2 * (ny + 1)))
+        for i in range(1, nx + 1):
             x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x1[i]))))
             y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y1[i]))))
             z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z1[i]))))
 
-        if y0 == 0 :
-            x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
-            y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
-            z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
-    
-        return x_mesh, y_mesh, z_mesh
-    
-def mesh_wing_breaking_point(ny, nx, y0, span, cord, breaking_point, sweep=0, lam=1, diedre=0, twist=0, LE_position=0, factor=1, vstab=False):
-    x1 = np.zeros([nx+1,ny+1])
-    y1 = np.zeros([nx+1,ny+1])
-    z1 = np.zeros([nx+1,ny+1])
-    xlinspace = np.linspace(0,cord,nx+1)
-    # ylinspace = np.linspace(0,span,ny+1) # Distribution linéaire des y
-    theta = np.linspace(np.pi/2,np.pi,ny+1)
-    ylinspace = -1*np.cos(theta)*span
-    #zlinspace = np.linspace(0,span*np.tan(np.deg2rad(diedre)),ny+1) # Old version qui créer une courbe au lieu d'une ligne droite
-    zlinspace = (ylinspace)*np.tan(np.deg2rad(diedre))
-    angletwist_linespace = -1*np.cos(theta)*twist
-    angletwist_linespace[0]=0
-    
-    for j in range(ny+1):
-        for i in range(nx+1):
-            y1[i,j] = ylinspace[j]
-    for i in range(nx+1):
-        for j in range(ny+1):
-            x1[i,j] = xlinspace[i] + y1[i,j]*np.tan(np.deg2rad(sweep)) + y1[i,j]/span*cord*(1-lam)/2*(1 - 2*i/nx)
-    for j in range(ny+1):
-        for i in range(nx+1):
-            z1[i,j] = zlinspace[j]
-    
-    for j in range(ny+1) :
-        corde = x1[-1, j] - x1[0, j]
-        for i in range(nx+1) :
-            z1[i, j] += (corde/4-x1[i,j])*np.tan(np.deg2rad(angletwist_linespace[j]))
-    
-    x1 *= factor
-    y1 *= factor
-    z1 *= factor
-    
-    x1 += LE_position
-    
-    if vstab :
-        return x1, z1, y1
-    
-    else :
-        x_left = np.flip(x1, 1)
-        y_left = np.flip(-y1, 1)
-        z_left = np.flip(z1, 1)
-        
-        x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2*(ny+1)))
-        y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2*(ny+1)))
-        z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2*(ny+1)))
-        for i in range(1, nx+1) :
-            x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x1[i]))))
-            y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y1[i]))))
-            z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z1[i]))))
-        
-        x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
-        y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
-        z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
-    
-    
-    
-    
+        if y0 == 0:
+            x_mesh = np.delete(x_mesh, ny, 1)  # Remove duplicate coords
+            y_mesh = np.delete(y_mesh, ny, 1)  # Remove duplicate coords
+            z_mesh = np.delete(z_mesh, ny, 1)  # Remove duplicate coords
+
         return x_mesh, y_mesh, z_mesh
 
-def lovell_mesh_wing(nx, ny, LE_position, factor=1, vstab=False, y0=0, z0=0) :
+
+def lovell_mesh_wing(nx, ny, LE_position, factor=1, vstab=False, y0=0, z0=0):
     """
     Generates a wing or tailplane mesh.
-    
+
     Parameters:
     nx (int): Number of chordwise panels.
     ny (int): Number of spanwise panels.
     LE_position (float): Leading edge x-position.
     factor (float, optional): Scaling factor. Default is 1.
     vstab (bool, optional): If True, generates a vertical stabilizer.
-    
+
     Returns:
     Tuple of numpy arrays (x, y, z)
-    """ 
-    
-    theta = np.linspace(np.pi/2,np.pi,ny+1)
-    y_span = -1*np.cos(theta)*1.074 # Spanwise panel coordinates
-    
-    x_lower = 0.632887/1.074*y_span # Chordwise panel coordinates for lower surface
-    x_upper = (0.76621-0.380923)/1.074*y_span + 0.380923 # Chordwise panel coordinates for upper surface
-    
+    """
+
+    theta = np.linspace(np.pi / 2, np.pi, ny + 1)
+    y_span = -1 * np.cos(theta) * 1.074  # Spanwise panel coordinates
+
+    x_lower = 0.632887 / 1.074 * y_span  # Chordwise panel coordinates for lower surface
+    x_upper = (0.76621 - 0.380923) / 1.074 * y_span + 0.380923  # Chordwise panel coordinates for upper surface
+
     # Generate the mesh
-    x = np.zeros((nx+1, ny+1))
-    y = np.zeros((nx+1, ny+1))
-    z = np.zeros((nx+1, ny+1))
-    for i in range(nx+1):
-        x[i] = (x_upper - x_lower)*i/(nx) + x_lower
+    x = np.zeros((nx + 1, ny + 1))
+    y = np.zeros((nx + 1, ny + 1))
+    z = np.zeros((nx + 1, ny + 1))
+    for i in range(nx + 1):
+        x[i] = (x_upper - x_lower) * i / (nx) + x_lower
         y[i] = y_span
-        
+
     x *= factor
     y *= factor
     z *= factor
-    
+
     x += LE_position
     y += y0
     z += z0
-    
+
     x_left = np.flip(x, 1)
     y_left = np.flip(-y, 1)
     z_left = np.flip(z, 1)
-    
-    x_mesh = np.concatenate((x_left[0], x[0])).reshape((1, 2*(ny+1)))
-    y_mesh = np.concatenate((y_left[0], y[0])).reshape((1, 2*(ny+1)))
-    z_mesh = np.concatenate((z_left[0], z[0])).reshape((1, 2*(ny+1)))
-    for i in range(1, nx+1) :
+
+    x_mesh = np.concatenate((x_left[0], x[0])).reshape((1, 2 * (ny + 1)))
+    y_mesh = np.concatenate((y_left[0], y[0])).reshape((1, 2 * (ny + 1)))
+    z_mesh = np.concatenate((z_left[0], z[0])).reshape((1, 2 * (ny + 1)))
+    for i in range(1, nx + 1):
         x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x[i]))))
         y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y[i]))))
         z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z[i]))))
-    
-    if y0 == 0 :
-        x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
-        y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
-        z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
-    
-    if vstab :
+
+    if y0 == 0:
+        x_mesh = np.delete(x_mesh, ny, 1)  # Remove duplicate coords
+        y_mesh = np.delete(y_mesh, ny, 1)  # Remove duplicate coords
+        z_mesh = np.delete(z_mesh, ny, 1)  # Remove duplicate coords
+
+    if vstab:
         return x, z, y
-    
-    else :
+
+    else:
         return x_mesh, y_mesh, z_mesh
 
-<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
-def WingElliptic(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twistTip=0, LE_position=0, factor=1, vstab=False):
-========
-def WingElliptic(ny, nx, y0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twistTip=0, LE_position=0, factor=1, vstab=False):
->>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
-    theta_i = np.linspace(0.5*np.pi, np.pi, ny+1)
-    y_i = -1*span*np.cos(theta_i)
-    x1 = np.zeros([nx+1,ny+1])
-    y1 = np.zeros([nx+1,ny+1])
-    z1 = np.zeros([nx+1,ny+1])
-    for j in range(ny+1):
+
+def WingElliptic(ny, nx, y0, z0, span, cord, glisse=0, sweep=0, lam=1, diedre=0, twistTip=0, LE_position=0, factor=1,
+                 vstab=False):
+    theta_i = np.linspace(0.5 * np.pi, np.pi, ny + 1)
+    y_i = -1 * span * np.cos(theta_i)
+    x1 = np.zeros([nx + 1, ny + 1])
+    y1 = np.zeros([nx + 1, ny + 1])
+    z1 = np.zeros([nx + 1, ny + 1])
+    for j in range(ny + 1):
         y = y_i[j]
         eta = y / span
 
         twist = eta * twistTip
 
-        chord = Vector3(np.sqrt(1.0 - eta*eta*.995) * cord,
+        chord = Vector3(np.sqrt(1.0 - eta * eta * .995) * cord,
                         0.0, 0.0).rotate(0.0, twist, 0.0)
 
         pt = Vector3(tan(sweep) * y, y, 0.0) + \
-                        (Vector3(cord, 0.0, 0.0)-chord)*0.5
+             (Vector3(cord, 0.0, 0.0) - chord) * 0.5
 
         ds = chord / float(nx)
 
-        for i in range(nx+1):
+        for i in range(nx + 1):
             p1 = pt
 
             pt = pt + ds
 
-            x1[i,j] = p1.x
-            y1[i,j] = p1.y
-            z1[i,j] = p1.z
-    
+            x1[i, j] = p1.x
+            y1[i, j] = p1.y
+            z1[i, j] = p1.z
+
     x1 += LE_position
-<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
     z1 += z0
     y1 += y0
 
-========
-    
->>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
     x_left = np.flip(x1, 1)
     y_left = np.flip(-y1, 1)
     z_left = np.flip(z1, 1)
-    
-    x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2*(ny+1)))
-    y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2*(ny+1)))
-    z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2*(ny+1)))
-    for i in range(1, nx+1) :
+
+    x_mesh = np.concatenate((x_left[0], x1[0])).reshape((1, 2 * (ny + 1)))
+    y_mesh = np.concatenate((y_left[0], y1[0])).reshape((1, 2 * (ny + 1)))
+    z_mesh = np.concatenate((z_left[0], z1[0])).reshape((1, 2 * (ny + 1)))
+    for i in range(1, nx + 1):
         x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x1[i]))))
         y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y1[i]))))
         z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z1[i]))))
-    
-<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
-    if y0 == 0 :
-        x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
-        y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
-        z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
-========
-    x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
-    y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
-    z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
->>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
 
-    return x_mesh, y_mesh , z_mesh
+    if y0 == 0:
+        x_mesh = np.delete(x_mesh, ny, 1)  # Remove duplicate coords
+        y_mesh = np.delete(y_mesh, ny, 1)  # Remove duplicate coords
+        z_mesh = np.delete(z_mesh, ny, 1)  # Remove duplicate coords
 
-def save_mesh(nx, ny, x, y, z, file_name) :
+    return x_mesh, y_mesh, z_mesh
+
+
+def save_mesh(nx, ny, x, y, z, file_name):
     """
     Saves a structured mesh to a file.
-    
+
     Parameters:
         nx (int): Number of chordwise panels.
         ny (int): Number of spanwise panels.
@@ -389,22 +327,26 @@ def save_mesh(nx, ny, x, y, z, file_name) :
     """
     mesh = np.hstack((x.flatten(), y.flatten(), z.flatten()))
     with open(file_name, "w") as f:
-        f.write(f"{nx+1} {ny+1}\n")  # Write the number of coordinates as the first line
+        f.write(f"{nx + 1} {ny + 1}\n")  # Write the number of coordinates as the first line
         np.savetxt(f, mesh, delimiter=',')
+
 
 nx_wing_elliptic = 5
 ny_wing_elliptic = 50
-AR = 9 #CRM 9.0
-sweep = 0 #CRM 35 deg
+AR = 9  # CRM 9.0
+sweep = 0  # CRM 35 deg
 lam = 0.5
 diedre = 0
 glisse = 0
 twist = 0
 y0 = 10
 corde = 1
-span = AR*(corde+lam)/4
-x_wing_elliptic, y_wing_elliptic, z_wing_elliptic = WingElliptic(ny_wing_elliptic, nx_wing_elliptic, y0, span, corde, glisse, sweep, lam, diedre, twist, 2.5)
-save_mesh(nx_wing_elliptic, 2*ny_wing_elliptic, x_wing_elliptic, y_wing_elliptic, z_wing_elliptic, "mesh_wing_elliptic.txt")
+span = AR * (corde + lam) / 4
+x_wing_elliptic, y_wing_elliptic, z_wing_elliptic = WingElliptic(ny_wing_elliptic, nx_wing_elliptic, y0, span, corde,
+                                                                 glisse, sweep, lam, diedre, twist, 2.5)
+save_mesh(nx_wing_elliptic, 2 * ny_wing_elliptic, x_wing_elliptic, y_wing_elliptic, z_wing_elliptic,
+          "mesh_wing_elliptic.txt")
+
 
 def mesh_fuselage(fuselage_length, fuselage_height, fuselage_width, nx_fuse, nz_fuse, ny_fuse):
     """
@@ -437,20 +379,22 @@ def mesh_fuselage(fuselage_length, fuselage_height, fuselage_width, nx_fuse, nz_
 
     return X_fuse.transpose(), Y_fuse.transpose(), Z_fuse.transpose()
 
-def plot_wing(nx, ny, x, y, z, sym=True, color="tab:blue") : 
+
+def plot_wing(nx, ny, x, y, z, sym=True, color="tab:blue"):
     for i in range(nx + 1):
         ax.plot(x[i], y[i], z[i], "-", color=color)  # Chordwise lines
     for i in range(ny + 1):
         ax.plot(x[:, i], y[:, i], z[:, i], "-", color=color)  # Spanwise lines
-    
-    if sym : 
+
+    if sym:
         for i in range(nx + 1):
             ax.plot(x[i], -y[i], z[i], "-", color=color)  # Chordwise lines
         for i in range(ny + 1):
             ax.plot(x[:, i], -y[:, i], z[:, i], "-", color=color)  # Spanwise lines
 
+
 # # ############################################ Generate and Save  Lovell Meshes ############################################
-# # Wing mesh            
+# # Wing mesh
 # nx_wing = 2
 # ny_wing = 2
 # x_wing, y_wing, z_wing = lovell_mesh_wing(nx_wing, ny_wing, 0.7300327456656371, z0=-0.0368)
@@ -482,16 +426,10 @@ def plot_wing(nx, ny, x, y, z, sym=True, color="tab:blue") :
 # save_mesh(nx_fuse, nz_fuse, X_fuse, np.zeros_like(X_fuse), Z_fuse, "mesh_fuse_vertical.txt")
 # save_vtu_mesh(X_fuse, np.zeros_like(X_fuse), Z_fuse, "mesh_fuse_vertical.vtu")
 ########################################### Generate and Save Meshes ############################################
-<<<<<<<< HEAD:mesh3d/generate_vlm_mesh.py
-# Wing mesh    
+# Wing mesh
 '''        
 nx_wing = 3
 ny_wing = 20
-========
-# Wing mesh            
-nx_wing = 3
-ny_wing = 5
->>>>>>>> master:SOLVEUR_COUPLE/generate_mesh_VLM.py
 AR = 9 #CRM 9.0
 sweep = 0 #CRM 35 deg
 lam = 1.0
@@ -571,9 +509,3 @@ ax.set_zlabel("Z")
 ax.grid()
 
 '''
-
-
-
-
-
-

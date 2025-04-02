@@ -4,8 +4,11 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "euler2d")))
 from scipy.interpolate import griddata
+from post_process import read_PLOT3D_mesh, read_plot3d_2d, compute_coeff
 
 dash.register_page(__name__, path="/page-euler2d-results")
 
@@ -175,7 +178,8 @@ layout = dbc.Container([
 
     dbc.Row(
         dbc.Col(
-            dcc.Graph(id='result-plot', config={'scrollZoom':True}, style={'height': '70vh', 'width': '70%', 'margin': 'auto'}),
+            dcc.Graph(id='result-plot', config={'scrollZoom':True}, style={'height': '70vh', 'width': '70%', "marginTop": "10px", "marginBottom": "40px", "marginLeft": "70px",
+               "marginRight": "auto",'display': 'block' }),
             width=100,
             className="d-flex justify-content-center"
         )
@@ -194,9 +198,23 @@ layout = dbc.Container([
         justify="center",
         className="mb-4"
     ),
+    html.Hr(style={"width": "60%", "margin": "60px auto 20px auto", "borderTop": "1px solid #ccc"}),
+    dbc.Row(
+        dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                html.H5("Aerodynamic Coefficients", className="card-title"),
+                html.Div(id='coefficients-output', className="card-text")
+            ]),
+            className="mt-4 mb-4",
+            style={"width": "80%", "marginTop": "0px", "marginBottom": "40px", "marginLeft": "auto",
+               "marginRight": "auto", "textAlign": "center"}
+        ))
+                
+        ),
 
     dcc.Location(id='url', refresh=False),
-    dcc.Store(id="simulation-status", data={"complete": False}),  # Store to track progress
+    dcc.Store(id="simulation-status", data={"complete": False}), 
     html.Div(id='page-content')
 
     ], fluid=True, style={'height': '100vh'})
@@ -224,16 +242,28 @@ def initialize_results(pathname):
         ], "Density"
     except Exception as e:
         return [], None
-
- #####DEBUT CHANGEMENT########
+    
 def maillage_depuis_input():
     with open("input.txt", "r") as f:
         for line in f:
             if line.startswith("mesh_file"):
                 return line.split("=")[1].strip()
     return "temp/mesh.xyz"
+
+def calculer_coefficients():
+    try:
+        mesh_path = maillage_depuis_input()
+        x, y = read_PLOT3D_mesh(mesh_path)
+        _, _, mach, alpha, _, _, q_vertex = read_plot3d_2d("test.q")
+        _, C_L, C_D, C_M = compute_coeff(x, y, q_vertex, mach, alpha, T_inf=300, p_inf=1e5)
+        return round(C_L, 4), round(C_D, 4), round(C_M, 4)
+    except Exception as e:
+        print(f"Erreur calcul coefficients : {e}")
+        return None, None, None
+
 @dash.callback(
-    Output('result-plot', 'figure'),
+    [Output('result-plot', 'figure'),
+     Output('coefficients-output', 'children')],
     [Input('graph-selector', 'value')],
     [State('url', 'pathname')]
 )
@@ -242,14 +272,9 @@ def update_selected_graph(selected_graph, pathname):
     print(f"Graph update triggered - pathname: {pathname}, selected_graph: {selected_graph}")
 
     try:
-
         mesh_path = maillage_depuis_input()
         nx, ny, x_2d, y_2d = parse_mesh(mesh_path)
-        #####FIN CHANGEMENT########
         rho, rho_u, rho_v, rho_E = parse_test_q("test.q", nx, ny)
-
-        print(f"Mesh loaded - nx: {nx}, ny: {ny}")  # Debugging
-        print(f"len(x_2d): {x_2d.shape}")
 
         gamma = 1.4
         u = rho_u / rho
@@ -266,9 +291,14 @@ def update_selected_graph(selected_graph, pathname):
             "Mach Number": create_surface_plot(Mach, "Mach Number", "Mach", x_2d, y_2d)
         }
 
-        print(f"Returning graph for {selected_graph}")  # Debugging
-        return figures.get(selected_graph, go.Figure())
+        C_L, C_D, C_M = calculer_coefficients()
+        if C_L is not None:
+            coeffs_text = f"CL = {C_L}   |   CD = {C_D}   |   CM = {C_M}"
+        else:
+            coeffs_text = "Erreur lors du calcul des coefficients."
+
+        return figures.get(selected_graph, go.Figure()), coeffs_text
 
     except Exception as e:
         print(f"Error in graph update: {e}")
-        return go.Figure()
+        return go.Figure(), "Erreur lors du chargement."

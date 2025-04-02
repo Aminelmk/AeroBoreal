@@ -12,7 +12,7 @@ import io
 
 from mesh2d.naca4digits import Naca4Digits
 from mesh2d.cst_class import CstAirfoil
-from mesh3d.generate_vlm_mesh import mesh_wing, lovell_mesh_wing, WingElliptic, save_mesh
+from mesh3d.generate_vlm_mesh import mesh_wing, lovell_mesh_wing, WingElliptic, mesh_wing_CRM, save_mesh
 
 dash.register_page(__name__, path="/page-mesh3d")
 
@@ -229,7 +229,7 @@ layout = html.Div([
                                 dbc.Label("Select Wing Type:", width="auto"),
                                 dcc.Dropdown(
                                     id="type-dropdown",
-                                    options=[{"label": key, "value": key} for key in ['Custom', 'Lovell', 'Elliptic']],
+                                    options=[{"label": key, "value": key} for key in ['Custom', 'Lovell', 'Elliptic', 'CRM']],
                                     value='Custom',
                                     style={"flex": 1}  # Ensures it takes up remaining space
                                 ),
@@ -345,6 +345,9 @@ def update_control_panel(selected_option):
     elif selected_option == "Elliptic":
         #airfoil = update_cst_airfoil(3, N1=0.5, N2=1.0)
         return {"display": "none"}, {"display": "none"},  {"display": "block"}
+    elif selected_option == "CRM":
+        #airfoil = update_cst_airfoil(3, N1=0.5, N2=1.0)
+        return {"display": "none"}, {"display": "none"},  {"display": "none"}
 
 
 @dash.callback(
@@ -423,6 +426,10 @@ def update_mesh(selected_type, nx, ny, y0, LE, cust_AR, cust_cord, cust_sweep, c
             mesh = WingElliptic(ny, nx, y0, z0, span, ell_cord, 0, ell_sweep, 0, 0, 0, LE, 1, False)
             #print(vlm_mesh)
             return display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_structure, mesh_qquatercord)
+        elif selected_type == "CRM":
+            mesh = mesh_wing_CRM(ny, nx)
+            #print(vlm_mesh)
+            return display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_structure, mesh_qquatercord)
  
         
 @dash.callback(
@@ -439,10 +446,10 @@ def save_mesh3d(nx, ny, download_clicks, show_nodes):
     triggered_id = ctx.triggered_id
 
     if triggered_id == "button-download-mesh3d":
-        save_mesh(nx, 2*ny, mesh[0], mesh[1], mesh[2], './temp/mesh3d.x')
+        save_mesh(nx, 2*ny, mesh[0], mesh[1], mesh[2], './mesh3d.x')
 
         # Afficher le message "Mesh downloaded"
-        return "Mesh downloaded to ./temp/mesh3d.x !", {"color": "green", "fontWeight": "bold"}
+        return "Mesh downloaded to ./mesh3d.x !", {"color": "green", "fontWeight": "bold"}
     
 
     if triggered_id in [

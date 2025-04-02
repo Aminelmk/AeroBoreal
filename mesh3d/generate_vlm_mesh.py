@@ -330,22 +330,68 @@ def save_mesh(nx, ny, x, y, z, file_name):
         f.write(f"{nx + 1} {ny + 1}\n")  # Write the number of coordinates as the first line
         np.savetxt(f, mesh, delimiter=',')
 
+def mesh_wing_CRM(ny, nx):
+    def LE_curve_x_coords(y) :
+        p1 = (0.677521, 0.082631)
+        p2 = (1.225223, 0.792428)
+        a = (p2[1] - p1[1]) / (p2[0] - p1[0])
+        b = p1[1] - a * p1[0]
+        return (y - b)/a
+    def TE_curve_x_coords_pre_break(y) :
+        p1 = (1.00123341888853, 0.0826305988976328)
+        p2 = (1.03594427856013, 0.29499686197843)
+        a = (p2[1] - p1[1]) / (p2[0] - p1[0])
+        b = p1[1] - a * p1[0]
+        return (y - b)/a
+    def TE_curve_x_coords_post_break(y) :
+        p1 = (1.03594427856013, 0.29499686197843)
+        p2 = (1.3001853090588, 0.792428497197092)
+        a = (p2[1] - p1[1]) / (p2[0] - p1[0])
+        b = p1[1] - a * p1[0]
+        return (y - b)/a
 
-nx_wing_elliptic = 5
-ny_wing_elliptic = 50
-AR = 9  # CRM 9.0
-sweep = 0  # CRM 35 deg
-lam = 0.5
-diedre = 0
-glisse = 0
-twist = 0
-y0 = 10
-corde = 1
-span = AR * (corde + lam) / 4
-x_wing_elliptic, y_wing_elliptic, z_wing_elliptic = WingElliptic(ny_wing_elliptic, nx_wing_elliptic, y0, span, corde,
-                                                                 glisse, sweep, lam, diedre, twist, 2.5)
-save_mesh(nx_wing_elliptic, 2 * ny_wing_elliptic, x_wing_elliptic, y_wing_elliptic, z_wing_elliptic,
-          "mesh_wing_elliptic.txt")
+    ny_1 = int(ny/3)
+    ny_2 = int(ny - ny_1)
+    y_span_1 = np.linspace(0, 0.29499686197843, ny_1+1)
+    theta = np.linspace(np.pi/2, np.pi, ny_2+1)
+    y_span_2 = -1*np.cos(theta)*(0.793 - 0.29499686197843) + 0.29499686197843
+    y_span_2 = np.delete(y_span_2, 0) # Remove duplicate coords
+    y_span_LE = np.concatenate((y_span_1, y_span_2))
+
+    x_LE = LE_curve_x_coords(y_span_LE)
+    x_TE_pre_break = TE_curve_x_coords_pre_break(y_span_1)
+    x_TE_post_break = TE_curve_x_coords_post_break(y_span_2) 
+    
+    x_TE = np.concatenate((x_TE_pre_break, x_TE_post_break)) 
+
+    # # Calculate sweep angle 
+    # sweep_angle = np.arctan((x_LE[-1] - x_LE[0]) / (y_span_LE[-1] - y_span_LE[0]))
+    # print(f"Sweep angle: {np.degrees(sweep_angle)} degrees")
+
+    # Generate the mesh
+    x = np.zeros((nx+1, ny+1))
+    y = np.zeros((nx+1, ny+1))
+    z = np.zeros((nx+1, ny+1))
+    for i in range(nx+1):
+        x[i] = (x_TE - x_LE)*i/(nx) + x_LE
+        y[i] = y_span_LE
+
+    x_left = np.flip(x, 1)
+    y_left = np.flip(-y, 1)
+    z_left = np.flip(z, 1)
+    
+    x_mesh = np.concatenate((x_left[0], x[0])).reshape((1, 2*(ny+1)))
+    y_mesh = np.concatenate((y_left[0], y[0])).reshape((1, 2*(ny+1)))
+    z_mesh = np.concatenate((z_left[0], z[0])).reshape((1, 2*(ny+1)))
+    for i in range(1, nx+1) :
+        x_mesh = np.vstack((x_mesh, np.concatenate((x_left[i], x[i]))))
+        y_mesh = np.vstack((y_mesh, np.concatenate((y_left[i], y[i]))))
+        z_mesh = np.vstack((z_mesh, np.concatenate((z_left[i], z[i]))))
+    x_mesh = np.delete(x_mesh, ny, 1) # Remove duplicate coords
+    y_mesh = np.delete(y_mesh, ny, 1) # Remove duplicate coords
+    z_mesh = np.delete(z_mesh, ny, 1) # Remove duplicate coords
+
+    return x_mesh, y_mesh, z_mesh 
 
 
 def mesh_fuselage(fuselage_length, fuselage_height, fuselage_width, nx_fuse, nz_fuse, ny_fuse):

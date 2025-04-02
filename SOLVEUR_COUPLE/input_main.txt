@@ -1,11 +1,11 @@
-Mach = 0.5
-alpha = 5
+Mach = 0.85
+alpha = 1
 p_inf = 100000
 T_inf = 300
 couplage_Euler = 1
-y_0_profils = -4.5 0 4.5
-profils_paths = SOLVEUR_COUPLE/database/x.6 SOLVEUR_COUPLE/database/x.6 SOLVEUR_COUPLE/database/x.6
+y_0_profils = -0.7933 -0.7536 -0.714 -0.6346 -0.5553 -0.476 -0.3967 -0.3173 -0.238 -0.1587 -0.0873 0.0873 0.1587 0.238 0.3173 0.3967 0.476 0.5553 0.6346 0.714 0.7536 0.7933
+profils_paths = SOLVEUR_COUPLE/database/Coupey0,7933.xyz SOLVEUR_COUPLE/database/Coupey0,7536.xyz SOLVEUR_COUPLE/database/Coupey0,714.xyz SOLVEUR_COUPLE/database/Coupey0,6346.xyz SOLVEUR_COUPLE/database/Coupey0,5553.xyz SOLVEUR_COUPLE/database/Coupey0,476.xyz SOLVEUR_COUPLE/database/Coupey0,3967.xyz SOLVEUR_COUPLE/database/Coupey0,3173.xyz SOLVEUR_COUPLE/database/Coupey0,238.xyz SOLVEUR_COUPLE/database/Coupey0,1587.xyz SOLVEUR_COUPLE/database/Coupey0,0873.xyz SOLVEUR_COUPLE/database/Coupey0,0873.xyz SOLVEUR_COUPLE/database/Coupey0,1587.xyz SOLVEUR_COUPLE/database/Coupey0,238.xyz SOLVEUR_COUPLE/database/Coupey0,3173.xyz SOLVEUR_COUPLE/database/Coupey0,3967.xyz SOLVEUR_COUPLE/database/Coupey0,476.xyz SOLVEUR_COUPLE/database/Coupey0,5553.xyz SOLVEUR_COUPLE/database/Coupey0,6346.xyz SOLVEUR_COUPLE/database/Coupey0,714.xyz SOLVEUR_COUPLE/database/Coupey0,7536.xyz SOLVEUR_COUPLE/database/Coupey0,7933.xyz
 it_max = 100
-wing_mesh_path = SOLVEUR_COUPLE/../temp/mesh3d.x
-nb_nodes = 4
+wing_mesh_path = SOLVEUR_COUPLE/../mesh3d.x
+nb_nodes = 11
 quarter_chord_ratio = 0.25

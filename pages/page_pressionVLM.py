@@ -99,14 +99,6 @@ layout = dbc.Container(
     [
         # Header Section
         dbc.Row(
-            dbc.Col(
-                html.H2("VTU Visualization Dashboard", className="text-center my-4 text-primary"),
-                width=12
-            )
-        ),
-        
-        # Wing Type Selector
-        dbc.Row(
             [
                 dbc.Col(
                     html.Div([
@@ -114,15 +106,34 @@ layout = dbc.Container(
                         dcc.Dropdown(
                             id="wing-selector",
                             options=[
+                                {"label": "Deformed Wing", "value": "deformed"},
                                 {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
-                                {"label": "Deformed Wing", "value": "deformed"}
+                                
                             ],
-                            value="initial",  # Default selection.
+                            value="deformed",  # Default selection.
                             placeholder="Select Wing Type",
                             className="dropdown"
                         )
                     ], className="mb-3"),
-                    width={"size": 6, "offset": 3}
+                    width=6
+                ),
+                dbc.Col(
+                    html.Div([
+                        html.Label("Select Value to Visualize:", className="form-label text-primary"),
+                        dcc.Dropdown(
+                            id="value-selector",
+                            options=[
+                                {"label": "Pressure", "value": "pressure"},
+                                {"label": "Cp", "value": "cp"},
+                                {"label": "Drag", "value": "drag"},
+                                {"label": "Lift", "value": "lift"}
+                            ],
+                            value="pressure",  # Default selection.
+                            placeholder="Select Value",
+                            className="dropdown"
+                        )
+                    ], className="mb-3"),
+                    width=6
                 )
             ]
         ),
@@ -145,9 +156,9 @@ layout = dbc.Container(
 
 @dash.callback(
     Output("3d-plot1", "figure"),
-    [Input("wing-selector", "value")]
+    [Input("wing-selector", "value"), Input("value-selector", "value")]
 )
-def update_plot(wing_type):
+def update_plot(wing_type, scalar_name):
         # Path to the "temp" folder
     temp_folder = "../HTML_3D/temp"
 
@@ -168,15 +179,10 @@ def update_plot(wing_type):
         return fig
     # VTU file paths
     wing_files = {
-        "initial": os.path.join(temp_folder, vtu_files[0]),
         "deformed": os.path.join(temp_folder, vtu_files[-1]),
+        "initial": os.path.join(temp_folder, vtu_files[0]),
+        
     }
-    other_components = [
-        "../HTML_3D/mesh_fuse_vertical.vtu",
-        "../HTML_3D/mesh_fuse_horizontal.vtu",
-        "../HTML_3D/mesh_vstab.vtu",
-        "../HTML_3D/mesh_hstab.vtu",
-    ]
 
     meshes = []
 
@@ -185,44 +191,49 @@ def update_plot(wing_type):
         wing_file = wing_files[wing_type]
         wing_polydata = load_vtu_file(wing_file)
         
-        # Debug: Check pressure field after conversion
-        print("Pressure (after conversion):", wing_polydata.GetPointData().GetArray("pressure"))
+        # Debug: Check the selected scalar field
+        print(f"Selected Scalar Field: {scalar_name}")
+        scalar_values = wing_polydata.GetPointData().GetArray(scalar_name)
+        # if scalar_values is None:
+        #     raise ValueError(f"Scalar field '{scalar_name}' not found in the VTU file.")
 
-        pressure_values = numpy_support.vtk_to_numpy(wing_polydata.GetPointData().GetArray("pressure"))
-        print("Pressure Values Shape:", pressure_values.shape)
+        scalar_values = numpy_support.vtk_to_numpy(scalar_values)
+        # print(f"{scalar_name} Values Shape:", scalar_values.shape)
 
         tri_wing_polydata = triangulate_polydata(wing_polydata)
         wing_mesh = polydata_to_plotly_mesh_with_scalar(
             tri_wing_polydata,
-            pressure_values,
-            scalar_name="pressure",
+            scalar_values,
+            scalar_name=scalar_name,
             colorscale="Viridis",
         )
         meshes.append(wing_mesh)
     except Exception as e:
         print(f"Error loading wing file: {e}")
 
-    # Load other components
-    for i, file_path in enumerate(other_components):
-        try:
-            polydata = load_vtu_file(file_path)  # Correct polydata reference
-            tri_polydata = triangulate_polydata(polydata)
-            mesh = polydata_to_plotly_mesh_with_scalar(
-                tri_polydata,
-                scalar_name="pressure",
-                colorscale="Cividis",
-            )
-            meshes.append(mesh)
-        except Exception as e:
-            print(f"Error loading file {file_path}: {e}")
 
     fig = go.Figure(data=meshes)
+    #Set the zoom level and center the view
+    points = numpy_support.vtk_to_numpy(wing_polydata.GetPoints().GetData())
+    x_range = [np.min(points[:, 0]), np.max(points[:, 0])]
+    y_range = [-np.max(points[:, 1]), np.max(points[:, 1])]
+    z_range = [-np.max(points[:, 1]), np.max(points[:, 1])]
+    # x_range = [-3, 3]
+    # y_range = [-3, 3]
+    # z_range = [-3, 3]
     fig.update_layout(
         scene=dict(
-            xaxis=dict(title="X"),
-            yaxis=dict(title="Y"),
-            zaxis=dict(title="Z"),
-            aspectmode="data",
+            xaxis=dict(title="X", range=x_range),
+            yaxis=dict(title="Y",range=y_range),
+            zaxis=dict(title="Z", range=z_range),
+            aspectmode="manual",
+            aspectratio=dict(x=1, y=2, z=1),  # Relative scaling of the axes
+            # aspectmode="data",
+        ),
+        scene_camera=dict(
+            eye=dict(x=1.5, y=1.5, z=1.5),
+            center=dict(x=0, y=0, z=0),
+            up=dict(x=0, y=0, z=1),
         ),
         margin=dict(l=20, r=20, b=20, t=20),
     )

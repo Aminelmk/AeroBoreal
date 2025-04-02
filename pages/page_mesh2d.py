@@ -171,6 +171,12 @@ bspline_controls = html.Div(id="bspline-controls", children=[
         options=[{"label": str(k), "value": k} for k in [15, 20, 25, 30]],
         value=25
     ),
+    html.Label("Degré (0, 1, 2, 3):"),
+    dcc.Dropdown(
+       id="bspline-degree",
+       options=[{"label": str(p), "value": p} for p in [0, 1, 2, 3]],
+       value=3
+     ),
     dcc.Upload(
         id='upload-bspline',
         children=html.Div(['Drag and Drop or ', html.A('Select a File')]),
@@ -309,7 +315,8 @@ def update_coeffs(n):
         State("bspline-knot", "value"),
         State("upload-data", "contents"),
         State("n-order-input", "value"),
-        State("n-cell-slider", "value")
+        State("n-cell-slider", "value"),
+        State("bspline-degree", "value")  
     ],
     prevent_initial_call=True
 )
@@ -318,7 +325,7 @@ def update_coeffs(n):
 
 def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber, camber_pos, thickness, method,
                A_upper_values, A_lower_values,
-               bspline_content, bspline_knot, cst_content, n_order, n_cell):
+               bspline_content, bspline_knot, cst_content, n_order, n_cell,  bspline_degree):
         
     global airfoil, mesh, points_data, bspline_data, bspline_input
     triggered = ctx.triggered_id
@@ -377,7 +384,7 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
             with open("temp_bspline.dat", "w") as f:
                 decoded = base64.b64decode(bspline_content.split(',')[1]).decode('utf-8')
                 f.write(decoded)
-            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot)
+            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot, bspline_degree)
 
             # curve = np.loadtxt("BSpline_curve.txt", dtype=float, usecols=(0, 1))
             airfoil = BSplineWrapper()

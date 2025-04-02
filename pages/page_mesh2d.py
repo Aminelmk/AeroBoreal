@@ -16,7 +16,7 @@ from mesh2d.elliptic_grid import PoissonMesh
 from mesh2d.bspline_wrapper import BSplineWrapper
 
 # Converted CPP
-from B_SPLINE_SOLVER import BSpline_solver
+from B_Spline_Solver import BSpline_solver
 
 dash.register_page(__name__, path="/page-mesh2d")
 

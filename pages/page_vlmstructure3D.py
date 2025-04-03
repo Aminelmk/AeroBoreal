@@ -209,9 +209,8 @@ layout = html.Div([
 # Callbacks
 
 @dash.callback(
-    #[
-    Output('solver-status-vlm', 'children'),
-    #Output('visualization-redirect', 'children')],
+    [Output('solver-status-vlm', 'children'),
+    Output('visualization-redirect-vlm', 'children')],
     [Input('run_solvervlm', 'n_clicks')],
     [State('vlm_Mach', 'value'),
      State('vlm_alpha', 'value'),
@@ -237,12 +236,12 @@ def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, wingmesh, nodes, quatercor
         solveur_couple.solve("SOLVEUR_COUPLE/input_main.txt")
         subprocess.run(["python", "SOLVEUR_COUPLE/write_vtu.py"], check=True)
         status = dbc.Alert("✅ Simulation completed successfully!", color="success")
-        #redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
+        redirect = dcc.Location(pathname="/pages-pressionVLM", id="redirect-vlm")
     except Exception as e:
         status = dbc.Alert(f" Error: {str(e)}", color="danger")
-        #redirect = dash.no_update
+        redirect = dash.no_update
 
-    return status #, redirect 
+    return status, [redirect] 
 
 @dash.callback(
     Output('eulerprofil_table', 'data'),

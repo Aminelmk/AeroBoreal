@@ -10,6 +10,8 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP], 
     suppress_callback_exceptions=True  
 )
+app.config.suppress_callback_exceptions = True
+app.enable_dev_tools(dev_tools_props_check=False)
 
 
 server = app.server
@@ -59,4 +61,4 @@ app.layout = html.Div([
 ])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

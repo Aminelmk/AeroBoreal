@@ -160,17 +160,25 @@ def display_airfoil(airfoil, points=None, mesh=None, bspline_data=None, bspline_
 
     fig.update_layout(title="Airfoil Display", xaxis_title="x/c", yaxis_title="y/c",
                       xaxis_range=[-0.1, 1.1], yaxis_range=[-0.4, 0.4], yaxis_scaleanchor="x",
-                      showlegend=True, width=800, height=600, dragmode="pan")
+                      showlegend=True, height=600, dragmode="pan",
+                      legend=dict(xanchor="left", yanchor="top", x=0.01, y=0.99))
     return fig
 
 # Ajout interface pour B-Spline avec upload, fit et knots
 bspline_controls = html.Div(id="bspline-controls", children=[
-    html.Label("Knot Value (15, 20, 25, 30):"),
-    dcc.Dropdown(
-        id="bspline-knot",
-        options=[{"label": str(k), "value": k} for k in [15, 20, 25, 30]],
-        value=25
-    ),
+
+    html.Div([
+        html.Label("Knot value:", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Dropdown(
+            id="bspline-knot",
+            options=[{"label": str(k), "value": k} for k in [15, 20, 25, 30]],
+            value=25,
+            style={"flex": "1"}
+        ),
+    ], className="row d-flex align-items-center mt-2"),
+
+    html.Br(),
+
     dcc.Upload(
         id='upload-bspline',
         children=html.Div(['Drag and Drop or ', html.A('Select a File')]),
@@ -181,6 +189,9 @@ bspline_controls = html.Div(id="bspline-controls", children=[
         },
         multiple=False
     ),
+
+    html.Div(id="bspline-upload-message"),
+
     html.Button('Fit Airfoil', id='fit-bspline', n_clicks=0)
 ])
 
@@ -199,30 +210,82 @@ layout = html.Div([
             dbc.Col([
                 dbc.Accordion([
                     dbc.AccordionItem([
-                        dbc.Label("Méthode de profil"),
-                        dcc.Dropdown(
-                            id="mesh-dropdown",
-                            options=[{"label": k, "value": k} for k in ["NACA", "CST", "B-Spline"]],
-                            value="NACA"
-                        ),
+
+                        html.Div([
+                            dbc.Label("Select method: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Dropdown(
+                                id="mesh-dropdown",
+                                options=[{"label": k, "value": k} for k in ["NACA", "CST", "B-Spline"]],
+                                value="NACA",
+                                style={"flex": "1"}
+                            ),
+                        ], className="row d-flex align-items-center mt-2"),
+
                         html.Div(id="naca-controls", children=[
-                            html.Label("Max Camber (1/100)"),
-                            dcc.Slider(id="max_camber_slider", min=0, max=9, step=1, value=INIT_CAMBER,
-                                       marks={i: str(i) for i in range(0, 10)}),
 
-                            html.Label("Camber Position (1/10)"),
-                            dcc.Slider(id="max_camber_pos_slider", min=0, max=9, step=1, value=INIT_CAMBER_POS,
-                                       marks={i: str(i) for i in range(0, 10)}),
+                            # html.Div([
+                            #     html.Label("Cell number: ", className="col-6"),
+                            #     dcc.Dropdown([16, 32, 64, 128, 256], 32, id="n-cell-slider", style={"flex": "1"}),
+                            # ], className="row d-flex align-items-center mt-2"),
 
-                            html.Label("Max Thickness (%)"),
-                            dcc.Slider(id="max_thickness_slider", min=1, max=20, step=1, value=INIT_THICKNESS,
-                                       marks={i: str(i) for i in range(1, 21)})
+                            html.Br(),
+
+                            html.Div([
+                                html.Label("Max camber: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="max_camber_slider", type="number", min=0, max=9, value=INIT_CAMBER,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
+
+                            # dcc.Slider(id="max_camber_slider", min=0, max=9, step=1, value=INIT_CAMBER,
+                            #            marks={i: str(i) for i in range(0, 10)}),
+                            html.Div([
+                                html.Label("Camber position: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="max_camber_pos_slider", type="number", min=0, max=9, value=INIT_CAMBER_POS,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
+
+
+                            # dcc.Slider(id="max_camber_pos_slider", min=0, max=9, step=1, value=INIT_CAMBER_POS,
+                            #            marks={i: str(i) for i in range(0, 10)}),
+
+
+                            html.Div([
+                                html.Label("Max thickness: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="max_thickness_slider", type="number", min=1, max=99, value=INIT_THICKNESS,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
+                            html.Div([
+                                html.Label("Sharp TE:", className="me-2",
+                                           style={"text-align": "left", "white-space": "nowrap", "display": "flex",
+                                                  "align-items": "center"}),
+                                daq.BooleanSwitch(id="naca-sharp-te", on=True, style={"margin-top": "-15px"})
+                            ], className="d-flex align-items-center justify-content-between w-100"),
+
+                            html.Div(id="naca-sharp-te-warning"),
+
+                            # dcc.Slider(id="max_thickness_slider", min=1, max=20, step=1, value=INIT_THICKNESS,
+                            #            marks={i: str(i) for i in range(1, 21)}),
+
+
                         ]),
 
                         html.Div(id="cst-controls", children=[
-                            html.Label("N Order:"),
-                            dcc.Input(id="n-order-input", type="number", value=3, min=1, max=10),
+
+                            html.Br(),
+
+                            html.Div([
+                                html.Label("Curve order:", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="n-order-input", type="number", value=3, min=1, max=10,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
                             html.Div(id="coefficients-inputs"),
+
+                            html.Br(),
+
                             dcc.Upload(
                                 id='upload-data',
                                 children=html.Div(['Drag and Drop or ', html.A('Select a File')]),
@@ -232,22 +295,63 @@ layout = html.Div([
                                     'textAlign': 'center', 'marginBottom': '10px'
                                 }
                             ),
-                            html.Button('Fit Airfoil', id='fit-airfoil', n_clicks=0),
-                            daq.ToggleSwitch(id="show-airfoil-points", label="Afficher les points", labelPosition="bottom")
+
+                            html.Div(id="cst-upload-message"),
+
+                            html.Div([
+                                daq.BooleanSwitch(
+                                    id="show-airfoil-points",
+                                    on=False,
+                                    disabled=True,
+                                    label="Show input points",
+                                    labelPosition="bottom",
+                                    style={"marginRight": "20px"}  # Space between the switch and button
+                                ),
+                                html.Button('Fit Airfoil', id='fit-airfoil', n_clicks=0, style={"flex": "1"}),
+                            ], className="d-flex align-items-center mt-2")
                         ]),
 
                         bspline_controls
-                    ], title="Géométrie"),
+                    ], title="Airfoil Geometry"),
 
                     dbc.AccordionItem([
-                        html.Label("Nombre de cellules (2^x):"),
-                        dcc.Slider(3, 7, step=1, value=6, id="n-cell-slider"),
+
+                        html.Br(),
+                        html.H6("Mesh caracteristics"),
+
                         html.Div([
-                            dbc.Button("Générer le maillage", id="button-generate-mesh", n_clicks=0),
-                            dbc.Button("Télécharger", id="button-download-mesh", className="ms-2")
+                            html.Label("Cell number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Dropdown([16, 32, 64, 128, 256], 32, id="n-cell-slider", style={"flex": "1"}),
+                        ], className="row d-flex align-items-center mt-2"),
+
+
+                        html.Div([
+                            html.Label("Farfield radius: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Input(id="farfield-radius", type="number", min=10, max=1000, value=100, style={"flex": "1"}),
+                        ], className="row d-flex align-items-center mt-2"),
+
+
+                        html.Br(),
+                        html.H6("Solver parameters"),
+
+                        html.Div([
+                            html.Label("Max iterations: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Input(id="mesh-max-iter", type="number", min=1, max=1e6, value=1e4,
+                                      style={"flex": "1"}),
+                        ], className="row d-flex align-items-center mt-2"),
+
+                        html.Div([
+                            html.Label("Tolerance: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Input(id="mesh-tolerance", type="number", min=1e-8, max=1e-3, value=1e-4,
+                                      style={"flex": "1"}),
+                        ], className="row d-flex align-items-center mt-2"),
+
+                        html.Div([
+                            dbc.Button("Generate mesh", id="button-generate-mesh", n_clicks=0),
+                            dbc.Button("Download mesh", id="button-download-mesh", className="ms-2")
                         ], className="d-flex align-items-center mt-2"),
                         dcc.Download(id="download-mesh")
-                    ], title="Maillage")
+                    ], title="Elliptic Mesh")
                 ])
             ])
         ])
@@ -268,65 +372,92 @@ def toggle_visibility(method):
         {"display": "block"} if method == "B-Spline" else {"display": "none"}
     )
 
-@dash.callback(
-    Output("coefficients-inputs", "children"),
-    Input("n-order-input", "value")
-)
-def update_coeffs(n):
-    if n is None:
-        return []
-    return [
-        dbc.Row([
-            dbc.Col(html.Label(f"A_upper[{i}]"), width=6),
-            dbc.Col(html.Label(f"A_lower[{i}]"), width=6)
-        ]) if i == 0 else
-        dbc.Row([
-            dbc.Col(dcc.Input(id={'type': 'A_upper', 'index': i}, type='number', step=0.01, value=0), width=6),
-            dbc.Col(dcc.Input(id={'type': 'A_lower', 'index': i}, type='number', step=0.01, value=0), width=6)
-        ])
-        for i in range(n + 1)
-    ]
+# @dash.callback(
+#     Output("coefficients-inputs", "children"),
+#     Input("n-order-input", "value"),
+#     prevent_initial_call=True,
+# )
+# def update_coeffs(n):
+#     if n is None:
+#         return []
+#     else:
+#
+#         global airfoil
+#
+#         children = []
+#
+#         children.extend([
+#             html.Br(),
+#             html.H5("Surface coefficients"),
+#         ])
+#
+#         children.extend([
+#             dbc.Row([
+#                 dbc.Col(html.Label(f"Upper A"), width=6),
+#                 dbc.Col(html.Label(f"Lower A"), width=6)
+#             ])
+#         ])
+#
+#         for i in range(n + 1):
+#
+#             if type(airfoil) is CstAirfoil:
+#                 children.extend([
+#                     dbc.Row([
+#                         dbc.Col(dcc.Input(id={'type': 'A_upper', 'index': i}, type='number', value=airfoil.A_upper[i]), width=6),
+#                         dbc.Col(dcc.Input(id={'type': 'A_lower', 'index': i}, type='number', value=airfoil.A_lower[i]), width=6)
+#                     ])
+#                 ])
+#
+#         return children
 
 
 # Callback principal unique pour toutes les méthodes (NACA, CST, B-Spline)
 
 @dash.callback(
-    Output("airfoil-plot", "figure"),
+    [Output("airfoil-plot", "figure"),
+            Output("coefficients-inputs", "children"),],
     [
         Input("fit-airfoil", "n_clicks"),
         Input("fit-bspline", "n_clicks"),
         Input("button-generate-mesh", "n_clicks"),
-        Input("show-airfoil-points", "value"),
+        Input("show-airfoil-points", "on"),
         Input("max_camber_slider", "value"),
         Input("max_camber_pos_slider", "value"),
         Input("max_thickness_slider", "value"),
+        Input("naca-sharp-te", "on"),
         Input("mesh-dropdown", "value"),
         Input({"type": "A_upper", "index": dash.ALL}, "value"),
-        Input({"type": "A_lower", "index": dash.ALL}, "value")        
+        Input({"type": "A_lower", "index": dash.ALL}, "value"),
     ],
     [
         State("upload-bspline", "contents"),
         State("bspline-knot", "value"),
         State("upload-data", "contents"),
-        State("n-order-input", "value"),
-        State("n-cell-slider", "value")
+        Input("n-order-input", "value"),
+        State("n-cell-slider", "value"),
+        State("farfield-radius", "value"),
+        State("mesh-max-iter", "value"),
+        State("mesh-tolerance", "value"),
     ],
     prevent_initial_call=True
 )
-
-
-
-def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber, camber_pos, thickness, method,
+def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber, camber_pos, thickness, naca_sharp_te, method,
                A_upper_values, A_lower_values,
-               bspline_content, bspline_knot, cst_content, n_order, n_cell):
+               bspline_content, bspline_knot, cst_content, n_order,
+               n_cell, ff_radius, mesh_max_iter, mesh_tol,):
         
+    # global airfoil, mesh, points_data, bspline_data, bspline_input
     global airfoil, mesh, points_data, bspline_data, bspline_input
     triggered = ctx.triggered_id
 
     if triggered == "button-generate-mesh":
 
-        n_nodes = 2 ** n_cell + 1
-        n_xc_nodes = int((2 ** n_cell / 2) + 1)
+        # n_nodes = 2 ** n_cell + 1
+        # n_xc_nodes = int((2 ** n_cell / 2) + 1)
+
+        n_nodes = n_cell + 1
+        n_xc_nodes = int((n_cell / 2) + 1)
+
         beta = np.linspace(0, np.pi, n_xc_nodes)
         xc = 0.5 * (1 - np.cos(beta))
 
@@ -337,40 +468,75 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
         elif method == "B-Spline":
             xs, ys = airfoil.get_surface_from_x(xc)
         else:
-            return display_airfoil(airfoil)
+            return display_airfoil(airfoil), ""
 
         mesh = PoissonMesh(n_nodes, xs, ys)
-        mesh.ff_radius = 150
+        mesh.ff_radius = ff_radius
         mesh.init_grid()
-        mesh.grid_relaxation(tol=1e-6, max_iter=50_000)
+        mesh.grid_relaxation(tol=mesh_tol, max_iter=mesh_max_iter)
         mesh.write_plot3d("./temp/mesh.xyz")
 
         # if method == "B-Spline":
         #     return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input), mesh=mesh)
         # else:
-        return display_airfoil(airfoil, mesh=mesh)
+        return display_airfoil(airfoil, mesh=mesh), ""
 
     else:
 
+        def create_cst_coeff(airfoil):
+
+            cst_children = []
+
+            cst_children.extend([
+                html.Br(),
+                html.H5("Surface coefficients"),
+            ])
+            cst_children.extend([
+                dbc.Row([
+                    dbc.Col(html.Label(f"Upper A"), width=6),
+                    dbc.Col(html.Label(f"Lower A"), width=6)
+                ])
+            ])
+
+            for i in range(n_order + 1):
+                cst_children.extend([
+                    dbc.Row([
+                        dbc.Col(dcc.Input(id={'type': 'A_upper', 'index': i}, type='number', value=airfoil.A_upper[i]), width=6),
+                        dbc.Col(dcc.Input(id={'type': 'A_lower', 'index': i}, type='number', value=airfoil.A_lower[i]), width=6)
+                    ])
+                ])
+
+            return cst_children
+
+
         if method == "NACA":
-            airfoil = Naca4Digits(camber, camber_pos, thickness)
-            # return display_airfoil(airfoil)
+            airfoil = Naca4Digits(camber, camber_pos, thickness, sharp=naca_sharp_te)
+            return [display_airfoil(airfoil), ""]
 
-        if method == "CST" and triggered == "fit-airfoil" and cst_content:
-            decoded = base64.b64decode(cst_content.split(',')[1]).decode('utf-8')
-            input_stream = io.StringIO(decoded)
-            airfoil = CstAirfoil(n_order)
-            airfoil.import_points(input_stream)
-            airfoil.fit_airfoil()
-            points_data = airfoil.imported_airfoil
-            return display_airfoil(airfoil, points=points_data if show_pts else None)
+        elif method == "CST":
 
-        if method == "CST" and (triggered == "n-order-input" or (isinstance(triggered, dict) and triggered.get("type") in ["A_upper", "A_lower"])):
-            airfoil = update_cst_airfoil(n_order, N1=0.5, N2=1.0)
-            if A_upper_values is not None and A_lower_values is not None:
-                airfoil.A_upper = np.array(A_upper_values)
-                airfoil.A_lower = np.array(A_lower_values)
-            return display_airfoil(airfoil)
+            if triggered == "fit-airfoil" and cst_content:
+                decoded = base64.b64decode(cst_content.split(',')[1]).decode('utf-8')
+                input_stream = io.StringIO(decoded)
+                airfoil = CstAirfoil(n_order)
+                airfoil.import_points(input_stream)
+                airfoil.fit_airfoil()
+                points_data = airfoil.imported_airfoil
+
+            if triggered == "mesh-dropdown":
+                airfoil = CstAirfoil(n_order, N1=0.5, N2=1.0)
+                return [display_airfoil(airfoil), create_cst_coeff(airfoil)]
+
+            if triggered == "n-order-input":
+                airfoil.set_n_order(n_order)
+                return [display_airfoil(airfoil), create_cst_coeff(airfoil)]
+
+            if triggered == "n-order-input" or (isinstance(triggered, dict) and triggered.get("type") in ["A_upper", "A_lower"]):
+                if A_upper_values is not None and A_lower_values is not None:
+                    airfoil.A_upper = np.array(A_upper_values)
+                    airfoil.A_lower = np.array(A_lower_values)
+
+            return [display_airfoil(airfoil, points=points_data if show_pts else None), create_cst_coeff(airfoil)]
 
 
         if method == "B-Spline" and triggered == "fit-bspline" and bspline_content:
@@ -389,10 +555,47 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
             # bspline_input = read_bspline_content(bspline_content)
             # return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input))
 
-            return display_airfoil(airfoil)
+            return display_airfoil(airfoil), ""
 
-    return display_airfoil(airfoil, points=points_data if show_pts else None)
+    return [display_airfoil(airfoil), ""]
 
+
+
+@dash.callback(
+    [Output("naca-sharp-te-warning", "children"),
+     Output("button-generate-mesh", "disabled")],
+    Input("naca-sharp-te", "on"),
+    prevent_initial_call=True,
+)
+def display_naca_sharp_te_warning(sharp_te):
+    if sharp_te:
+        return "", False
+    else:
+        return [html.Br(), dbc.Alert(f"It is not possible to generate a mesh with a blunt trailing edge.", color="warning")], True
+
+
+@dash.callback(
+    [Output("cst-upload-message", "children"),
+    Output("show-airfoil-points", "disabled")],
+    Input("upload-data", "contents"),
+    State("upload-data", "filename"),
+    prevent_initial_call=True
+)
+def display_cst_upload_message(contents, filename):
+    if contents is None:
+        return dash.no_update
+    return dbc.Alert(f"File uploaded: {filename}", color="success"), False
+
+@dash.callback(
+    Output("bspline-upload-message", "children"),
+    Input("upload-bspline", "contents"),
+    State("upload-bspline", "filename"),
+    prevent_initial_call=True
+)
+def display_bspline_upload_message(contents, filename):
+    if contents is None:
+        return dash.no_update
+    return dbc.Alert(f"File uploaded: {filename}", color="success")
 
 @dash.callback(
     Output("download-mesh", "data"),

@@ -71,8 +71,9 @@ def calculCp(y):
     
     # Étape 2
     it_max = []
-    for filename in os.listdir("temp"):  
-        it_max.append(filename.split("_")[1])
+    for filename in os.listdir("temp"): 
+        if 'displacement' not in filename : 
+            it_max.append(filename.split("_")[1])
     nx = int(filename.split("_")[3])
     ny = int(filename.split("_")[5])
     it_max = int(max(it_max))
@@ -183,7 +184,8 @@ def calculCp(y):
 def outline():
     it_max = []
     for filename in os.listdir("temp"):  
-        it_max.append(filename.split("_")[1])
+        if 'displacement' not in filename : 
+            it_max.append(filename.split("_")[1])
     nx = int(filename.split("_")[3])
     ny = int(filename.split("_")[5])
     it_max = int(max(it_max))

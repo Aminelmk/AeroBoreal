@@ -25,7 +25,7 @@ couplage_Euler = 1
 y_0_profils = {" ".join(row['col1_euler'] for row in datapath)}
 profils_paths = SOLVEUR_COUPLE/database/{" SOLVEUR_COUPLE/database/".join(row['col2_euler'] for row in datapath)}
 it_max = {it_max}
-wing_mesh_path = SOLVEUR_COUPLE/{wingmesh}
+wing_mesh_path = {wingmesh}
 nb_nodes = {nodes+1}
 quarter_chord_ratio = {quatercord}"""
 
@@ -60,142 +60,162 @@ def write_struct_file(data_struct):
 # ======================================================================
 
 layout = html.Div([
-    html.H1("Fluid-Structure Solver Configuration", className="mb-4"),
+    dbc.Container([
+    html.H1("Fluid-Structure Solver Configuration", className="mb-4 text-center"),
 
-    dbc.Card([
-        dbc.CardBody([
-            dbc.Row([
-                html.H1(html.Strong("Fluid Settings")),
-                dbc.Col([
-                    html.Label("Mach Number"),
-                    dcc.Input(id='vlm_Mach', type='number', value=0.85, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Angle of Attack (deg)"),
-                    dcc.Input(id='vlm_alpha', type='number', value=1.0, className="mb-2"),
-                ], width=2),
-                 dbc.Col([
-                    html.Label("Pressure (p_inf) [Pa]"),
-                    dcc.Input(id='vlm_p_inf', type='number', value=1e5, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Temperature (T_inf) [K]"),
-                    dcc.Input(id='vlm_T_inf', type='number', value=300.0, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Wing Mesh Path"),
-                    dcc.Input(id='vlm_wingmesh', type='text', value="../mesh3d.x", className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+    dbc.Row([
+    dbc.Col([
+    html.H4("Fluid Properties"),
 
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Number of Euler Profils :"),
-                    dcc.Input(id='num_profil', type='number', value=22, min=1, step=1, className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+    html.Br(),
+    html.Div([
+        html.Label("Mach Number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_Mach", type="number", min=0, max=10, value=0.85, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
 
-            dbc.Table([
-                dash_table.DataTable(
-                    id='eulerprofil_table',
-                    columns=[
-                        {'name': 'Y-axis Coordinate', 'id': 'col1_euler', 'editable': True},
-                        {'name': 'Profil file path', 'id': 'col2_euler', 'editable': True}
-                    ],
-                    data=[{'col1_euler': '-0.7933', 'col2_euler': 'Coupey0,7933.xyz'},
-                          {'col1_euler': '-0.7536', 'col2_euler': 'Coupey0,7536.xyz'},
-                          {'col1_euler': '-0.714', 'col2_euler': 'Coupey0,714.xyz'},
-                          {'col1_euler': '-0.6346', 'col2_euler': 'Coupey0,6346.xyz'},
-                          {'col1_euler': '-0.5553', 'col2_euler': 'Coupey0,5553.xyz'},
-                          {'col1_euler': '-0.476', 'col2_euler': 'Coupey0,476.xyz'},
-                          {'col1_euler': '-0.3967', 'col2_euler': 'Coupey0,3967.xyz'},
-                          {'col1_euler': '-0.3173', 'col2_euler': 'Coupey0,3173.xyz'},
-                          {'col1_euler': '-0.238', 'col2_euler': 'Coupey0,238.xyz'},
-                          {'col1_euler': '-0.1587', 'col2_euler': 'Coupey0,1587.xyz'},
-                          {'col1_euler': '-0.0873', 'col2_euler': 'Coupey0,0873.xyz'},
-                          {'col1_euler': '0.0873', 'col2_euler': 'Coupey0,0873.xyz'},
-                          {'col1_euler': '0.1587', 'col2_euler': 'Coupey0,1587.xyz'},
-                          {'col1_euler': '0.238', 'col2_euler': 'Coupey0,238.xyz'},
-                          {'col1_euler': '0.3173', 'col2_euler': 'Coupey0,3173.xyz'},
-                          {'col1_euler': '0.3967', 'col2_euler': 'Coupey0,3967.xyz'},
-                          {'col1_euler': '0.476', 'col2_euler': 'Coupey0,476.xyz'},
-                          {'col1_euler': '0.5553', 'col2_euler': 'Coupey0,5553.xyz'},
-                          {'col1_euler': '0.6346', 'col2_euler': 'Coupey0,6346.xyz'},
-                          {'col1_euler': '0.714', 'col2_euler': 'Coupey0,714.xyz'},
-                          {'col1_euler': '0.7536', 'col2_euler': 'Coupey0,7536.xyz'},
-                          {'col1_euler': '0.7933', 'col2_euler': 'Coupey0,7933.xyz'}],
-                    row_deletable=True,  # Permet de supprimer des lignes
-                    style_table={'overflowX': 'auto', 'border': '1px solid #dee2e6'},
-                    style_header={'backgroundColor': 'primary', 'textAlign': 'center'},
-                    style_data={'border': '1px solid #dee2e6', 'textAlign': 'center'}
-                )
-            ], bordered=True, responsive=True, className="table-hover"),
+    html.Div([
+        html.Label("Angle of Attack (°): ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_alpha", type="number", value=1.0, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
 
-            html.H1(html.Strong("Structure Settings")),
+    html.Div([
+        html.Label("Pressure (p_inf) [Pa]: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_p_inf", type="number", value=1e5, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
 
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Number of elements"),
-                    dcc.Input(id='vlm_nodes', type='number', value=10, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Quater Cord Ratio"),
-                    dcc.Input(id='vlm_qquatercord', type='number', value=0.5, className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+    html.Div([
+        html.Label("Temperature (T_inf) [K]: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_T_inf", type="number", value=300.0, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
 
-            dbc.Table([
-                dash_table.DataTable(
-                    id='structure_table',
-                    columns=[
-                        {'name': 'ID', 'id': 'col0_struct', 'editable': False},
-                        {'name': 'Aire de section', 'id': 'col1_struct', 'editable': True},
-                        {'name': 'Module de Young', 'id': 'col2_struct', 'editable': True},
-                        {'name': 'Coefficient de Poisson', 'id': 'col3_struct', 'editable': True},
-                        {'name': 'Iz', 'id': 'col4_struct', 'editable': True},
-                        {'name': 'Iy', 'id': 'col5_struct', 'editable': True},
-                        {'name': 'J', 'id': 'col6_struct', 'editable': True},
-                        {'name': 'V0', 'id': 'col7_struct', 'editable': True},
-                        {'name': 'V1', 'id': 'col8_struct', 'editable': True},
-                        {'name': 'V2', 'id': 'col9_struct', 'editable': True}
-                    ], style_cell={'width': 'auto', 'minWidth': '100px', 'maxWidth': '200px'},
+    html.Br(),
 
-        
-                    data =[{'col0_struct': 1, 'col1_struct': '2859.16', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.42E+06', 'col5_struct': '5.60E+07', 'col6_struct': '6.37e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 2, 'col1_struct': '2412.57', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '4.59E+05', 'col5_struct': '2.62E+07', 'col6_struct': '2.16e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 3, 'col1_struct': '1963.50', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '2.09E+05', 'col5_struct': '1.36E+07', 'col6_struct': '7.13e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 4, 'col1_struct': '1613.23', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '8.50E+04', 'col5_struct': '6.19E+06', 'col6_struct': '2.88e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 5, 'col1_struct': '1442.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.42E+04', 'col5_struct': '2.81E+06', 'col6_struct': '1.80e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 6, 'col1_struct': '1267.87', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.86E+04', 'col5_struct': '1.78E+06', 'col6_struct': '1.10e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 7, 'col1_struct': '1098.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.19E+04', 'col5_struct': '1.03E+06', 'col6_struct': '6.38e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 8, 'col1_struct': '928.92', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '6.36E+03', 'col5_struct': '5.68E+05', 'col6_struct': '3.51e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 9, 'col1_struct': '760.34', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.21E+03', 'col5_struct': '2.90E+05', 'col6_struct': '1.68e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
-                           {'col0_struct': 10, 'col1_struct': '675.59', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.44E+03', 'col5_struct': '1.29E+05', 	'col6_struct':	'1.04e+03','col7_struct':'0.00','col8_struct':'1.00','col9_struct':'0.00'}],
-                    
+    html.Div([
+        html.Label("Number of Euler Profils : ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="num_profil", type="number", min = 1, value=22, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
 
-                    row_deletable=True,  # Permet de supprimer des lignes
-                    style_table={'overflowX': 'auto', 'border': '1px solid #dee2e6'},
-                    style_header={'backgroundColor': 'primary', 'textAlign': 'center'},
-                    style_data={'border': '1px solid #dee2e6', 'textAlign': 'center'}
-                )
-            ], bordered=True, responsive=True, className="table-hover"),
+    ], width = 5)
+    ], justify="center"),
 
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Max Iterations"),
-                    dcc.Input(id='vlm_it_max', type='number', value=100, className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Run Simulation", id='run_solvervlm', color="primary", className="mt-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+    dbc.Table([
+        dash_table.DataTable(
+            id='eulerprofil_table',
+            columns=[
+                {'name': 'Y-axis Coordinate', 'id': 'col1_euler', 'editable': True},
+                {'name': 'Profil File Path', 'id': 'col2_euler', 'editable': True}
+            ],
+            data=[{'col1_euler': '-0.7933', 'col2_euler': 'Coupey0,7933.xyz'},
+                    {'col1_euler': '-0.7536', 'col2_euler': 'Coupey0,7536.xyz'},
+                    {'col1_euler': '-0.714', 'col2_euler': 'Coupey0,714.xyz'},
+                    {'col1_euler': '-0.6346', 'col2_euler': 'Coupey0,6346.xyz'},
+                    {'col1_euler': '-0.5553', 'col2_euler': 'Coupey0,5553.xyz'},
+                    {'col1_euler': '-0.476', 'col2_euler': 'Coupey0,476.xyz'},
+                    {'col1_euler': '-0.3967', 'col2_euler': 'Coupey0,3967.xyz'},
+                    {'col1_euler': '-0.3173', 'col2_euler': 'Coupey0,3173.xyz'},
+                    {'col1_euler': '-0.238', 'col2_euler': 'Coupey0,238.xyz'},
+                    {'col1_euler': '-0.1587', 'col2_euler': 'Coupey0,1587.xyz'},
+                    {'col1_euler': '-0.0873', 'col2_euler': 'Coupey0,0873.xyz'},
+                    {'col1_euler': '0.0873', 'col2_euler': 'Coupey0,0873.xyz'},
+                    {'col1_euler': '0.1587', 'col2_euler': 'Coupey0,1587.xyz'},
+                    {'col1_euler': '0.238', 'col2_euler': 'Coupey0,238.xyz'},
+                    {'col1_euler': '0.3173', 'col2_euler': 'Coupey0,3173.xyz'},
+                    {'col1_euler': '0.3967', 'col2_euler': 'Coupey0,3967.xyz'},
+                    {'col1_euler': '0.476', 'col2_euler': 'Coupey0,476.xyz'},
+                    {'col1_euler': '0.5553', 'col2_euler': 'Coupey0,5553.xyz'},
+                    {'col1_euler': '0.6346', 'col2_euler': 'Coupey0,6346.xyz'},
+                    {'col1_euler': '0.714', 'col2_euler': 'Coupey0,714.xyz'},
+                    {'col1_euler': '0.7536', 'col2_euler': 'Coupey0,7536.xyz'},
+                    {'col1_euler': '0.7933', 'col2_euler': 'Coupey0,7933.xyz'}],
+            row_deletable=True,  # Permet de supprimer des lignes
+            style_table={'overflowX': 'auto', 'border': '1px solid #dee2e6'},
+            style_header={'backgroundColor': 'primary', 'textAlign': 'center'},
+            style_data={'border': '1px solid #dee2e6', 'textAlign': 'center'}
+        )
+    ], bordered=True, responsive=True, className="table-hover"),
 
+    html.Br(),
+    dbc.Row([
+    dbc.Col([
+    html.H4("Structure Properties"),
+
+    html.Br(),
+
+    html.Div([
+        html.Label("Quater Cord Ratio: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_qquatercord", type="number", min=0, max=1, value=0.5, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
+
+    html.Br(),
+
+    html.Div([
+        html.Label("Number of elements: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_nodes", type="number", min= 1, value=10, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
+
+    ], width = 5)
+    ], justify="center"),
+
+    dbc.Table([
+        dash_table.DataTable(
+            id='structure_table',
+            columns=[
+                {'name': 'ID', 'id': 'col0_struct', 'editable': False},
+                {'name': 'Sectional Area', 'id': 'col1_struct', 'editable': True},
+                {'name': 'Young\'s Modulus', 'id': 'col2_struct', 'editable': True},
+                {'name': 'Poisson\'s ratio', 'id': 'col3_struct', 'editable': True},
+                {'name': 'Iz', 'id': 'col4_struct', 'editable': True},
+                {'name': 'Iy', 'id': 'col5_struct', 'editable': True},
+                {'name': 'J', 'id': 'col6_struct', 'editable': True},
+                {'name': 'V0', 'id': 'col7_struct', 'editable': True},
+                {'name': 'V1', 'id': 'col8_struct', 'editable': True},
+                {'name': 'V2', 'id': 'col9_struct', 'editable': True}
+            ], style_cell={'width': 'auto', 'minWidth': '90px', 'maxWidth': '200px'},
+
+
+            data =[{'col0_struct': 1, 'col1_struct': '2859.16', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.42E+06', 'col5_struct': '5.60E+07', 'col6_struct': '6.37e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 2, 'col1_struct': '2412.57', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '4.59E+05', 'col5_struct': '2.62E+07', 'col6_struct': '2.16e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 3, 'col1_struct': '1963.50', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '2.09E+05', 'col5_struct': '1.36E+07', 'col6_struct': '7.13e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 4, 'col1_struct': '1613.23', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '8.50E+04', 'col5_struct': '6.19E+06', 'col6_struct': '2.88e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 5, 'col1_struct': '1442.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.42E+04', 'col5_struct': '2.81E+06', 'col6_struct': '1.80e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 6, 'col1_struct': '1267.87', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.86E+04', 'col5_struct': '1.78E+06', 'col6_struct': '1.10e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 7, 'col1_struct': '1098.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.19E+04', 'col5_struct': '1.03E+06', 'col6_struct': '6.38e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 8, 'col1_struct': '928.92', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '6.36E+03', 'col5_struct': '5.68E+05', 'col6_struct': '3.51e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 9, 'col1_struct': '760.34', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.21E+03', 'col5_struct': '2.90E+05', 'col6_struct': '1.68e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                    {'col0_struct': 10, 'col1_struct': '675.59', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.44E+03', 'col5_struct': '1.29E+05', 	'col6_struct':	'1.04e+03','col7_struct':'0.00','col8_struct':'1.00','col9_struct':'0.00'}],
             
-            
-        ])
-    ], className="mb-2"),
+
+            row_deletable=True,  # Permet de supprimer des lignes
+            style_table={'overflowX': 'auto', 'border': '1px solid #dee2e6'},
+            style_header={'backgroundColor': 'primary', 'textAlign': 'center'},
+            style_data={'border': '1px solid #dee2e6', 'textAlign': 'center'}
+        )
+    ], bordered=True, responsive=True, className="table-hover"),
+
+    html.Br(),
+    dbc.Row([
+    dbc.Col([
+    html.H4("Solver Property"),
+    html.Br(),
+
+    html.Div([
+        html.Label("Iterations: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Input(id="vlm_it_max", type="number", min=1, value=100, style={"flex": "1"}),
+    ], className="row d-flex align-items-center mt-2"),
+
+    
+    ], width = 3)
+    ], justify="center"),
+    html.Br(),
+
+    dbc.Row([
+    dbc.Col([
+    dbc.Button("Run Simulation", id='run_solvervlm', color="primary", className="mt-2"),
+        ], width=5),
+        ], justify="center"),
+
+
+    dbc.Row([
 
     dcc.Loading(
         id="solver-loading-vlm",
@@ -204,6 +224,8 @@ layout = html.Div([
     ),
 
     html.Div(id='visualization-redirect-vlm', style={'display': 'none'})
+    ])
+])
 ])
 
 
@@ -218,7 +240,6 @@ layout = html.Div([
      State('vlm_alpha', 'value'),
      State('vlm_p_inf', 'value'),
      State('vlm_T_inf', 'value'),
-     State('vlm_wingmesh', 'value'),
      State('vlm_nodes', 'value'),
      State('vlm_qquatercord', 'value'),
      State('eulerprofil_table', 'data'),
@@ -226,7 +247,8 @@ layout = html.Div([
      State('vlm_it_max', 'value')],
     prevent_initial_call=True
 )
-def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, wingmesh, nodes, quatercord, data_euler, data_structure, it_max):
+def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, nodes, quatercord, data_euler, data_structure, it_max):
+    wingmesh = 'mesh3d.x'
     if not n_clicks:
         return dash.no_update, dash.no_update
     # Generate input file

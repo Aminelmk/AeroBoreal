@@ -177,6 +177,16 @@ bspline_controls = html.Div(id="bspline-controls", children=[
         ),
     ], className="row d-flex align-items-center mt-2"),
 
+    html.Div([
+        html.Label("B-Spline degree:", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+        dcc.Dropdown(
+            id="bspline-degree",
+            options=[{"label": str(p), "value": p} for p in [0, 1, 2, 3]],
+            value=3,
+            style={"flex": "1"}
+        ),
+    ], className="row d-flex align-items-center mt-2"),
+
     html.Br(),
 
     dcc.Upload(
@@ -435,6 +445,7 @@ def toggle_visibility(method):
         State("upload-data", "contents"),
         Input("n-order-input", "value"),
         State("n-cell-slider", "value"),
+        State("bspline-degree", "value"),
         State("farfield-radius", "value"),
         State("mesh-max-iter", "value"),
         State("mesh-tolerance", "value"),
@@ -444,7 +455,7 @@ def toggle_visibility(method):
 def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber, camber_pos, thickness, naca_sharp_te, method,
                A_upper_values, A_lower_values,
                bspline_content, bspline_knot, cst_content, n_order,
-               n_cell, ff_radius, mesh_max_iter, mesh_tol,):
+               n_cell, bspline_degree, ff_radius, mesh_max_iter, mesh_tol,):
         
     # global airfoil, mesh, points_data, bspline_data, bspline_input
     global airfoil, mesh, points_data, bspline_data, bspline_input
@@ -543,7 +554,7 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
             with open("temp_bspline.dat", "w") as f:
                 decoded = base64.b64decode(bspline_content.split(',')[1]).decode('utf-8')
                 f.write(decoded)
-            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot)
+            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot, bspline_degree)
 
             # curve = np.loadtxt("BSpline_curve.txt", dtype=float, usecols=(0, 1))
             airfoil = BSplineWrapper()

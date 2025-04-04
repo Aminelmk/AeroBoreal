@@ -262,7 +262,7 @@ def save_uploaded_mesh(contents, filename):
     with open(filepath, 'wb') as f:
         f.write(new_file)
 
-    return dbc.Alert(f"✅ Mesh '{filename}' uploaded successfully!", color="success"), filename
+    return dbc.Alert(f"Mesh '{filename}' uploaded successfully!", color="success"), filename
 
  #########FIN CHANGEMENT##################       
 # ======================================================================

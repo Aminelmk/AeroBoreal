@@ -180,7 +180,43 @@ def calculCp(y):
 
 
 
+def outline():
+    it_max = []
+    for filename in os.listdir("temp"):  
+        it_max.append(filename.split("_")[1])
+    nx = int(filename.split("_")[3])
+    ny = int(filename.split("_")[5])
+    it_max = int(max(it_max))
+    nomFichier = f"temp/output_{it_max}_nx_{nx}_ny_{ny}_Cl.csv"
+    df = pd.read_csv(nomFichier, encoding="utf-8")
+    x_point = df["x"].values[:]
+    y_point = df["y"].values[:]
+    z_point = df["z"].values[:]
 
+    x_outline = np.zeros(2*ny + 2*nx + 1)
+    y_outline = np.zeros(2*ny + 2*nx + 1)
+    z_outline = np.zeros(2*ny + 2*nx + 1)
+    for i in range(ny):
+        x_outline[i] = x_point[i]
+        y_outline[i] = y_point[i]
+        z_outline[i] = z_point[i]
+    for i in range(nx):
+        x_outline[i+ny] = x_point[i*(ny+1) + ny]
+        y_outline[i+ny] = y_point[i*(ny+1) + ny]
+        z_outline[i+ny] = z_point[i*(ny+1) + ny]
+    for i in range(ny):
+        x_outline[i+ny+nx] = x_point[(ny+1)*(nx+1) - 1 - i]
+        y_outline[i+ny+nx] = y_point[(ny+1)*(nx+1) - 1 - i]
+        z_outline[i+ny+nx] = z_point[(ny+1)*(nx+1) - 1 - i]
+    for i in range(nx):
+        x_outline[i+2*ny+nx] = x_point[nx*(ny+1) - i*(ny+1)]
+        y_outline[i+2*ny+nx] = y_point[nx*(ny+1) - i*(ny+1)]
+        z_outline[i+2*ny+nx] = z_point[nx*(ny+1) - i*(ny+1)]
+    x_outline[-1] = x_point[0]
+    y_outline[-1] = y_point[0]
+    z_outline[-1] = z_point[0]
+    
+    return x_outline, y_outline, z_outline
 
 
 # y = np.linspace(-0.7,0.7,100)

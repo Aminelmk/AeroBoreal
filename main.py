@@ -63,7 +63,7 @@ navbar = dbc.NavbarSimple(
 )
 
 # App Layout (Navigation + Page Container)
-app.layout = html.Div([dbc.DropdownMenuItem("Results 3D", href="/pages-pressionVLM"),
+app.layout = html.Div([
     navbar,
     dash.page_container  # This will display the selected page
 ])

@@ -3,3 +3,6 @@ flask_env/
 .idea/
 temp/
 output_Euler/
+test.q
+checkpoint_test.txt
+mesh3d.x

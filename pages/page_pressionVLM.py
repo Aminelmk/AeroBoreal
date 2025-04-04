@@ -288,8 +288,8 @@ def fig_cp_curve():
     
     mesh_fig.update_layout(
     scene=dict(
-        xaxis_title='Y',
-        yaxis_title='X',
+        xaxis_title='X',
+        yaxis_title='Y',
         zaxis_title='Cp',
         aspectmode='data',
         camera=dict(

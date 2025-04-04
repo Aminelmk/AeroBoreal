@@ -3,6 +3,7 @@ from dash import html, dcc, Input, Output, ctx
 import dash_bootstrap_components as dbc
 import vtk
 from vtk.util import numpy_support
+import dash_daq as daq
 import plotly.colors as pc
 import numpy as np
 import plotly.graph_objs as go
@@ -300,68 +301,59 @@ def fig_cp_curve():
 )
     return mesh_fig
 # Layout with enhanced styling and usability
-layout = dbc.Container(
+layout = html.Div([
+    
+    dbc.Container(
     [
-        # Header Section
-        dbc.Row(
-            [
-                dbc.Col(
-                    html.Div([
-                        html.Label("Select Wing Type:", className="form-label text-primary"),
-                        dcc.Dropdown(
-                            id="wing-selector",
-                            options=[
+        html.Br(),
+        html.H1("Fluid-Structure Results", className="mb-4 text-center"),
+
+        dbc.Row([
+
+        dbc.Col([
+
+            html.Label("Select Wing Type:"),
+            dcc.Dropdown(
+                id='wing-selector',
+                options=[
                                 {"label": "Deformed Wing", "value": "deformed"},
                                 {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
                             ],
-                            value="deformed",  # Default selection.
-                            placeholder="Select Wing Type",
-                            className="dropdown"
-                        )
-                    ], className="mb-3"),
-                    width=6
-                ),
-                dbc.Col(
-                    html.Div([
-                        html.Label("Select Value to Visualize:", className="form-label text-primary"),
-                        dcc.Dropdown(
-                            id="value-selector",
-                            options=[
+                value="deformed",
+            ),
+        ], width=4),
+
+        dbc.Col([
+            html.Label("Select Value to Visualize:"),
+            dcc.Dropdown(
+                id='value-selector',
+                options=[
                                 {"label": "Pressure", "value": "pressure"},
-                                {"label": "Cp", "value": "cp"},
-                                {"label": "Cp2D", "value": "cp2d"},
+                                {"label": "Pressure Coefficient", "value": "cp"},
+                                {"label": "Pressure Coefficient Curves", "value": "cp2d"},
                                 {"label": "Drag", "value": "drag"},
                                 {"label": "Lift", "value": "lift"}
                             ],
                             value="pressure",  # Default selection.
-                            placeholder="Select Value",
-                            className="dropdown"
-                        )
-                    ], className="mb-3"),
-                    width=6
-                )
-            ]
-        ),
+            ),
+        ], width=4),
+
+    ], className="mb-4", justify="center"),
+
         # Row for "Show Panels" and "Selected Panel Value"
         dbc.Row(
             [
-                dbc.Col(
-                    html.Div([
-                        html.Label("Show Panels:", className="form-label text-primary", style={"font-size": "20px"}),
-                        dcc.Checklist(
-                            id="show-panels",
-                            options=[{"label": "", "value": "show"}],  # Empty label for the checkbox
-                            value=["show"],  # Default to showing panels
-                            inline=True,
-                            className="checkbox",
-                            style={
-                        "transform": "scale(1.5)",  # Scale up the checkbox size
-                        "margin-left": "10px",  # Add spacing between the label and checkbox
-                        }
-                        )
-                    ], className="d-flex align-items-center mb-3"),  # Align vertically with the panel value box
-                    width=6
-                ),
+
+            dbc.Col([
+                daq.BooleanSwitch(
+                                        id="show-panels",
+                                        on=True,
+                                        label="Show Panels",
+                                        labelPosition="bottom",
+                                        style={"marginRight": "20px"}  # Space between the switch and button
+                                    ),
+            ],width=4),
+                
                 dbc.Col(
                     html.Div(
                         id="clicked-panel-info",
@@ -375,10 +367,12 @@ layout = dbc.Container(
                             "text-align": "center",
                         },
                     ),
-                    width=6
+                    width=4
                 )
-            ]
+            ], className="mb-4", justify="center"
         ),
+
+
         dcc.Store(id="camera-state", data=None),  # Store for camera state
         # 3D Visualization Graph
         dbc.Row(
@@ -419,15 +413,16 @@ layout = dbc.Container(
             ]
         )
     ],
-    fluid=True,
-    style={"font-family": "Arial, sans-serif"}
+    fluid=False,
 )
+
+])
 
 @dash.callback(
     Output("3d-plot1", "figure"),
     [Input("wing-selector", "value"),
      Input("value-selector", "value"),
-     Input("show-panels", "value"),
+     Input("show-panels", "on"),
      Input("camera-state", "data")],  # Capture the current camera state
 )
 def update_plot(wing_type, scalar_name, show_panels, camera_state):
@@ -491,7 +486,7 @@ def update_plot(wing_type, scalar_name, show_panels, camera_state):
         meshes.append(wing_mesh)
 
         # Add panel visualization if the checkbox is checked
-        if "show" in show_panels:
+        if show_panels == True:
             quad_traces = polydata_to_plotly_quads(
                 wing_polydata,
                 scalar_values=scalar_values,

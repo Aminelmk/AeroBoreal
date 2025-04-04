@@ -1,0 +1,539 @@
+import dash
+from dash import html, dcc, Input, Output
+import dash_bootstrap_components as dbc
+import vtk
+from vtk.util import numpy_support
+import numpy as np
+import plotly.graph_objs as go
+import os
+import pandas as pd
+
+dash.register_page(__name__, path="/pages-pressionVLM")
+
+def load_vtu_file(file_path):
+    """
+    Load a VTU file from disk using VTK and convert it to vtkPolyData.
+    """
+    reader = vtk.vtkXMLUnstructuredGridReader()
+    reader.SetFileName(file_path)
+    reader.Update()
+
+    geometry_filter = vtk.vtkGeometryFilter()
+    geometry_filter.SetInputData(reader.GetOutput())
+    geometry_filter.Update()
+    polydata = geometry_filter.GetOutput()
+
+    # Perform cell-to-point data conversion.
+    cell_to_point_filter = vtk.vtkCellDataToPointData()
+    cell_to_point_filter.SetInputData(polydata)
+    cell_to_point_filter.Update()
+    converted_polydata = cell_to_point_filter.GetOutput()
+
+    return converted_polydata
+
+def polydata_to_plotly_quads(polydata, scalar_values=None, colorscale="Viridis"):
+    """
+    Extract quads (or other polygons) from vtkPolyData and render them as filled quads in Plotly.
+    """
+    # Extract points
+    vtk_points = polydata.GetPoints().GetData()
+    points = numpy_support.vtk_to_numpy(vtk_points)
+
+    # Retrieve quads (or other polygons)
+    polys = polydata.GetPolys()
+    polys.InitTraversal()
+    quads = []
+    idList = vtk.vtkIdList()
+    while polys.GetNextCell(idList):
+        if idList.GetNumberOfIds() == 4:  # Only process quads
+            quad = [idList.GetId(i) for i in range(4)]
+            quads.append(quad)
+
+    # Create a list of Scatter3d traces for each quad
+    traces = []
+    for quad in quads:
+        x = [points[quad[i], 0] for i in range(4)] + [points[quad[0], 0]]  # Close the quad
+        y = [points[quad[i], 1] for i in range(4)] + [points[quad[0], 1]]
+        z = [points[quad[i], 2] for i in range(4)] + [points[quad[0], 2]]
+
+        # Create a Scatter3d trace for the quad
+        trace = go.Scatter3d(
+            x=x,
+            y=y,
+            z=z,
+            mode="lines+markers",  # Use "lines" to render edges, "lines+markers" for vertices
+            line=dict(color="black", width=2),  # Customize edge color and width
+            marker=dict(size=2, color="blue"),  # Customize vertex markers
+            hoverinfo="none",
+            showlegend=False,
+        )
+        traces.append(trace)
+
+    return traces
+
+def triangulate_polydata(polydata):
+    """
+    Triangulate the polydata using vtkTriangleFilter for Plotly's Mesh3d
+    (which expects triangular cells).
+    """
+    triangle_filter = vtk.vtkTriangleFilter()
+    triangle_filter.SetInputData(polydata)
+    triangle_filter.Update()
+    return triangle_filter.GetOutput()
+
+def extract_cell_data(polydata, scalar_name):
+    """
+    Extract cell-based scalar values (e.g., pressure) from vtkPolyData.
+    """
+    data_array = polydata.GetCellData().GetArray(scalar_name)
+    if data_array:
+        return numpy_support.vtk_to_numpy(data_array)
+    else:
+        raise ValueError(f"Scalar field '{scalar_name}' not found in VTU file.")
+
+def polydata_to_plotly_mesh_with_scalar(polydata, pressure_values, scalar_name="pressure", colorscale="Viridis"):
+    """
+    Convert triangulated vtkPolyData to a Plotly Mesh3d object with scalar coloring.
+    """
+    # Extract points.
+    vtk_points = polydata.GetPoints().GetData()
+    points = numpy_support.vtk_to_numpy(vtk_points)
+
+    # Retrieve triangles.
+    polys = polydata.GetPolys()
+    polys.InitTraversal()
+    faces = []
+    idList = vtk.vtkIdList()
+    while polys.GetNextCell(idList):
+        if idList.GetNumberOfIds() != 3:
+            continue  # Skip non-triangles.
+        face = [idList.GetId(i) for i in range(3)]
+        faces.append(face)
+
+    faces_flat = [item for sublist in faces for item in sublist]
+
+    # Extract scalar values for coloring.
+    try:
+        scalar_values = extract_cell_data(polydata, scalar_name)
+    except ValueError as e:
+        print(f"Warning: {e}")
+        scalar_values = np.zeros(len(faces))  # Default to zeros if scalar not found.
+
+    # Create a Mesh3d object with color mapping based on the scalar field.
+    mesh = go.Mesh3d(
+        x=points[:, 0],
+        y=points[:, 1],
+        z=points[:, 2],
+        i=faces_flat[0::3],
+        j=faces_flat[1::3],
+        k=faces_flat[2::3],
+        intensity=pressure_values,  # Pass the point-based pressure values
+        colorscale=colorscale,    # Use Viridis (or any other Plotly colorscale).
+        showscale=True,           # Display the color scale bar.
+        opacity=0.8,
+        flatshading=True
+    )
+    return mesh
+
+
+def polydata_to_plotly_mesh_with_panels(polydata, scalar_values=None, scalar_name="pressure", colorscale="Viridis"):
+    """
+    Convert vtkPolyData to a Plotly Mesh3d object with optional scalar coloring for panels.
+    """
+    # Extract points
+    vtk_points = polydata.GetPoints().GetData()
+    points = numpy_support.vtk_to_numpy(vtk_points)
+
+    # Retrieve panels (triangles or quads)
+    polys = polydata.GetPolys()
+    polys.InitTraversal()
+    faces = []
+    idList = vtk.vtkIdList()
+    while polys.GetNextCell(idList):
+        if idList.GetNumberOfIds() == 3:  # Only process triangles
+            face = [idList.GetId(i) for i in range(3)]
+            faces.append(face)
+
+    faces_flat = [item for sublist in faces for item in sublist]
+
+    
+
+    # Create a Mesh3d object for panels
+    mesh = go.Mesh3d(
+        x=points[:, 0],
+        y=points[:, 1],
+        z=points[:, 2],
+        i=faces_flat[0::3],
+        j=faces_flat[1::3],
+        k=faces_flat[2::3],
+        intensity=scalar_values if scalar_values is not None else np.zeros(len(faces)),
+        colorscale=colorscale,
+        showscale=True,
+        opacity=0.8,
+        flatshading=True
+    )
+    return mesh
+
+def polydata_to_plotly_edges(polydata):
+    """
+    Extract edges from vtkPolyData and convert them to a Plotly Scatter3d object.
+    """
+    # Extract points
+    vtk_points = polydata.GetPoints().GetData()
+    points = numpy_support.vtk_to_numpy(vtk_points)
+
+    # Retrieve edges from the triangles
+    polys = polydata.GetPolys()
+    polys.InitTraversal()
+    edges = []
+    idList = vtk.vtkIdList()
+    while polys.GetNextCell(idList):
+        if idList.GetNumberOfIds() == 3:  # Only process triangles
+            edges.append([idList.GetId(0), idList.GetId(1)])
+            edges.append([idList.GetId(1), idList.GetId(2)])
+            edges.append([idList.GetId(2), idList.GetId(0)])
+
+    # Flatten the edges into x, y, z coordinates for Scatter3d
+    x, y, z = [], [], []
+    for edge in edges:
+        x.extend([points[edge[0], 0], points[edge[1], 0], None])  # Add None for line breaks
+        y.extend([points[edge[0], 1], points[edge[1], 1], None])
+        z.extend([points[edge[0], 2], points[edge[1], 2], None])
+
+    # Create a Scatter3d object for the edges
+    edge_trace = go.Scatter3d(
+        x=x,
+        y=y,
+        z=z,
+        mode="lines",
+        line=dict(color="black", width=2),  # Customize edge color and width
+        hoverinfo="none",
+    )
+    return edge_trace
+
+# Layout with enhanced styling and usability
+layout = dbc.Container(
+    [
+        # Header Section
+        dbc.Row(
+            [
+                dbc.Col(
+                    html.Div([
+                        html.Label("Select Wing Type:", className="form-label text-primary"),
+                        dcc.Dropdown(
+                            id="wing-selector",
+                            options=[
+                                {"label": "Deformed Wing", "value": "deformed"},
+                                {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
+                            ],
+                            value="deformed",  # Default selection.
+                            placeholder="Select Wing Type",
+                            className="dropdown"
+                        )
+                    ], className="mb-3"),
+                    width=6
+                ),
+                dbc.Col(
+                    html.Div([
+                        html.Label("Select Value to Visualize:", className="form-label text-primary"),
+                        dcc.Dropdown(
+                            id="value-selector",
+                            options=[
+                                {"label": "Pressure", "value": "pressure"},
+                                {"label": "Cp", "value": "cp"},
+                                {"label": "Drag", "value": "drag"},
+                                {"label": "Lift", "value": "lift"}
+                            ],
+                            value="pressure",  # Default selection.
+                            placeholder="Select Value",
+                            className="dropdown"
+                        )
+                    ], className="mb-3"),
+                    width=6
+                )
+            ]
+        ),
+        # Row for "Show Panels" and "Selected Panel Value"
+        dbc.Row(
+            [
+                dbc.Col(
+                    html.Div([
+                        html.Label("Show Panels:", className="form-label text-primary", style={"font-size": "20px"}),
+                        dcc.Checklist(
+                            id="show-panels",
+                            options=[{"label": "", "value": "show"}],  # Empty label for the checkbox
+                            value=["show"],  # Default to showing panels
+                            inline=True,
+                            className="checkbox",
+                            style={
+                        "transform": "scale(1.5)",  # Scale up the checkbox size
+                        "margin-left": "10px",  # Add spacing between the label and checkbox
+                        }
+                        )
+                    ], className="d-flex align-items-center mb-3"),  # Align vertically with the panel value box
+                    width=6
+                ),
+                dbc.Col(
+                    html.Div(
+                        id="clicked-panel-info",
+                        style={
+                            "font-size": "16px",
+                            "color": "blue",
+                            "padding": "10px",
+                            "border": "1px solid #ccc",
+                            "border-radius": "5px",
+                            "background-color": "#f9f9f9",
+                            "text-align": "center",
+                        },
+                    ),
+                    width=6
+                )
+            ]
+        ),
+        dcc.Store(id="camera-state", data=None),  # Store for camera state
+        # 3D Visualization Graph
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Graph(id="3d-plot1", style={"width": "100%", "height": "600px"}, config={"scrollZoom": True}),
+                    width=12,
+                    className="mb-4"
+                )
+            ]
+        ),
+
+         # Tz vs. y and Ry vs. y plots
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Graph(id="tz-vs-y-plot", style={"width": "100%", "height": "400px"}),
+                    width=6
+                ),
+                dbc.Col(
+                    dcc.Graph(id="ry-vs-y-plot", style={"width": "100%", "height": "400px"}),
+                    width=6
+                )
+            ]
+        )
+    ],
+    fluid=True,
+    style={"font-family": "Arial, sans-serif"}
+)
+
+@dash.callback(
+    Output("3d-plot1", "figure"),
+    [Input("wing-selector", "value"),
+     Input("value-selector", "value"),
+     Input("show-panels", "value"),
+     Input("camera-state", "data")],  # Capture the current camera state
+)
+def update_plot(wing_type, scalar_name, show_panels, camera_state):
+    # Path to the "temp" folder
+    temp_folder = "../HTML_3D/temp"
+
+    # Check for .vtu files in the "temp" folder
+    vtu_files = [f for f in os.listdir(temp_folder) if f.endswith(".vtu")]
+    if not vtu_files:
+        # If no .vtu files are found, return an error message as a figure
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Error: No .vtu files found in the 'temp' folder.<br>Please ensure the folder contains valid VTU files.",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16, color="red"),
+            align="center",
+        )
+        fig.update_layout(
+            scene=dict(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                zaxis=dict(visible=False),
+            ),
+            margin=dict(l=20, r=20, b=20, t=20),
+        )
+        return fig
+
+    # VTU file paths
+    wing_files = {
+        "deformed": os.path.join(temp_folder, vtu_files[-1]),
+        "initial": os.path.join(temp_folder, vtu_files[0]),
+    }
+
+    meshes = []
+
+    # Load the selected wing
+    try:
+        wing_file = wing_files[wing_type]
+        wing_polydata = load_vtu_file(wing_file)
+
+        # Debug: Check the selected scalar field
+        print(f"Selected Scalar Field: {scalar_name}")
+        scalar_values = wing_polydata.GetPointData().GetArray(scalar_name)
+        if scalar_values is not None:
+            scalar_values = numpy_support.vtk_to_numpy(scalar_values)
+        else:
+            scalar_values = None
+
+        # Add scalar visualization
+        tri_wing_polydata = triangulate_polydata(wing_polydata)
+        wing_mesh = polydata_to_plotly_mesh_with_scalar(
+            tri_wing_polydata,
+            scalar_values,
+            scalar_name=scalar_name,
+            colorscale="Viridis",
+        )
+        meshes.append(wing_mesh)
+
+        # Add panel visualization if the checkbox is checked
+        if "show" in show_panels:
+            quad_traces = polydata_to_plotly_quads(
+                wing_polydata,
+                scalar_values=scalar_values,
+                colorscale="Cividis",
+            )
+            meshes.extend(quad_traces)
+    except Exception as e:
+        print(f"Error loading wing file: {e}")
+
+    fig = go.Figure(data=meshes)
+
+    # Set the zoom level and center the view
+    points = numpy_support.vtk_to_numpy(wing_polydata.GetPoints().GetData())
+    x_range = [np.min(points[:, 0]), np.max(points[:, 0])]
+    y_range = [-np.max(points[:, 1]), np.max(points[:, 1])]
+    z_range = [-np.max(points[:, 1]), np.max(points[:, 1])]
+
+    # Default camera settings
+    scene_camera = dict(
+        eye=dict(x=1.5, y=1.5, z=1.5),
+        center=dict(x=0, y=0, z=0),
+        up=dict(x=0, y=0, z=1),
+    )
+
+    # Use the stored camera state if available
+    if camera_state:
+        scene_camera = camera_state
+
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(title="X", range=x_range),
+            yaxis=dict(title="Y", range=y_range),
+            zaxis=dict(title="Z", range=z_range),
+            aspectmode="manual",
+            aspectratio=dict(x=1, y=2, z=1),  # Relative scaling of the axes
+        ),
+        scene_camera=scene_camera,  # Apply the preserved or default camera state
+        margin=dict(l=20, r=20, b=20, t=20),
+    )
+    return fig
+
+@dash.callback(
+    Output("camera-state", "data"),
+    Input("3d-plot1", "relayoutData"),
+    prevent_initial_call=True  # Prevent triggering on initial load
+)
+def update_camera_state(relayout_data):
+    if relayout_data and "scene.camera" in relayout_data:
+        return relayout_data["scene.camera"]
+    return dash.no_update
+
+@dash.callback(
+    Output("clicked-panel-info", "children"),
+    Input("3d-plot1", "clickData"),
+)
+def display_clicked_panel_info(click_data):
+    if click_data is None:
+        return html.Div(
+            "Click on a panel to see its value.",
+            style={
+                "font-size": "16px",
+                "color": "gray",
+                "padding": "10px",
+                "border": "1px solid #ccc",
+                "border-radius": "5px",
+                "background-color": "#f9f9f9",
+                "text-align": "center",
+            },
+        )
+
+    # Extract the scalar value from the clicked data
+    try:
+        scalar_value = click_data["points"][0]["intensity"]
+        return html.Div(
+            f"Selected Panel Value: {scalar_value:.2f}",
+            style={
+                "font-size": "18px",
+                "color": "white",
+                "padding": "10px",
+                "border": "1px solid #007bff",
+                "border-radius": "5px",
+                "background-color": "#007bff",
+                "text-align": "center",
+                "font-weight": "bold",
+            },
+        )
+    except KeyError:
+        return html.Div(
+            "No scalar value available for the selected panel.",
+            style={
+                "font-size": "16px",
+                "color": "red",
+                "padding": "10px",
+                "border": "1px solid #f5c6cb",
+                "border-radius": "5px",
+                "background-color": "#f8d7da",
+                "text-align": "center",
+            },
+        )
+
+import re  # For extracting numbers from filenames
+
+@dash.callback(
+    [Output("tz-vs-y-plot", "figure"), Output("ry-vs-y-plot", "figure")],
+    Input("3d-plot1", "relayoutData"),  # Trigger when the 3D plot is updated
+)
+def update_displacement_plots(relayout_data):
+    # Path to the "temp" folder
+    temp_folder = "../HTML_3D/temp"
+
+    # Find all displacement_i.csv files in the folder
+    displacement_files = [f for f in os.listdir(temp_folder) if (f.startswith("displacement_") and f.endswith(".csv"))]
+    if not displacement_files:
+        # Return empty figures if no displacement files are found
+        empty_fig = go.Figure()
+        empty_fig.update_layout(title="No displacement data available.")
+        return empty_fig, empty_fig
+
+    # Identify the latest displacement file (highest i)
+    latest_file_path = os.path.join(temp_folder, displacement_files[-1])
+
+    # Load the latest displacement file
+    data = pd.read_csv(latest_file_path)
+    span = (data["y"].max() - data["y"].min())/2
+
+    # Create the Tz vs. y plot
+    tz_vs_y_fig = go.Figure()
+    tz_vs_y_fig.add_trace(go.Scatter(x=data["y"]/span, y=data["Tz"]*1000, mode="lines+markers", name="Tz vs. y/span"))
+    tz_vs_y_fig.update_layout(
+        title="Tz vs. y/span",
+        xaxis_title="y/span",
+        yaxis_title="Tz (mm)",
+        template="plotly_white",
+    )
+
+    # Create the Ry vs. y plot
+    ry_vs_y_fig = go.Figure()
+    ry_vs_y_fig.add_trace(go.Scatter(x=data["y"]/span, y=np.degrees(data["Ry"]), mode="lines+markers", name="Ry vs. y/span"))
+    ry_vs_y_fig.update_layout(
+        title="Ry vs. y/span",
+        xaxis_title="y/span",
+        yaxis_title="Ry (deg)",
+        template="plotly_white",
+    )
+
+    return tz_vs_y_fig, ry_vs_y_fig
+
+

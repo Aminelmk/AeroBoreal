@@ -9,8 +9,8 @@ class CstAirfoil:
     def __init__(self, n_order, N1=0.5, N2=1.0):
 
         self.n_order = n_order
-        self.A_upper = np.ones(n_order+1)
-        self.A_lower = np.ones(n_order+1)
+        self.A_upper = np.ones(n_order+1) * 0.15
+        self.A_lower = np.ones(n_order+1) * -0.15
 
         self.N1 = N1
         self.N2 = N2
@@ -48,8 +48,8 @@ class CstAirfoil:
             self.A_lower = self.A_lower[:n_order+1]
             self.n_order = n_order
         elif n_order > self.n_order:
-            self.A_upper = np.concatenate((self.A_upper, np.ones(n_order - self.n_order)))
-            self.A_lower = np.concatenate((self.A_lower, np.ones(n_order - self.n_order)))
+            self.A_upper = np.concatenate((self.A_upper, 0.15*np.ones(n_order - self.n_order)))
+            self.A_lower = np.concatenate((self.A_lower, (-0.15)*np.ones(n_order - self.n_order)))
             self.n_order = n_order
 
     def fit_airfoil(self):

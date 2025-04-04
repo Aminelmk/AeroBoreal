@@ -111,10 +111,12 @@ def create_surface_plot(variable, title, colorbar_title, x_2d, y_2d):
 # ======================================================================
 
 layout = html.Div([
-    html.H1("Euler Solver Configuration", className="mb-4"),
+    html.H1("Euler Solver Configuration", className="mb-4 text-center"),
 
     dbc.Card([
         dbc.CardBody([
+
+            # Ligne 1
             dbc.Row([
                 dbc.Col([
                     html.Label("Number of Threads"),
@@ -132,8 +134,13 @@ layout = html.Div([
                     html.Label("CFL Number"),
                     dcc.Input(id='CFL_number', type='number', value=3.0, step=0.1, className="mb-2"),
                 ], width=2),
-            ], className="mb-3"),
+                dbc.Col([
+                    html.Label("Max Iterations"),
+                    dcc.Input(id='it_max', type='number', value=10000, className="mb-2"),
+                ], width=2),
+            ], className="mb-3", justify="center"),
 
+            # Ligne 2
             dbc.Row([
                 dbc.Col([
                     html.Label("Pressure (p_inf) [Pa]"),
@@ -151,13 +158,10 @@ layout = html.Div([
                     html.Label("k4 (4th Order Dissipation)"),
                     dcc.Input(id='k4', type='number', value=2, step=0.01, className="mb-2"),
                 ], width=2),
-            ], className="mb-3"),
+            ], className="mb-3", justify="center"),
 
+            # Ligne 3 : Dropdowns
             dbc.Row([
-                dbc.Col([
-                    html.Label("Max Iterations"),
-                    dcc.Input(id='it_max', type='number', value=10000, className="mb-2"),
-                ], width=2),
                 dbc.Col([
                     html.Label("Multigrid"),
                     dcc.Dropdown(
@@ -175,32 +179,37 @@ layout = html.Div([
                         value=0,
                         clearable=False
                     ),
-                ], width=3),
-            ], className="mb-3"),
+                ], width=2),
+            ], className="mb-4", justify="center"),
 
-            dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2")
+            # Ligne 4 : Bouton
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2"),
+                    width="auto"
+                )
+            ], justify="center"),
+
+            # Ligne 5 : Upload Mesh
+            dbc.Row([
+                dbc.Col([
+                    html.Label("Upload Mesh (.xyz)", className="text-center"),
+                    dcc.Upload(
+                        id='upload-mesh',
+                        children=html.Div(['Drag and Drop or ', html.A('Select a mesh file (.xyz)')]),
+                        style={
+                            'width': '100%', 'height': '60px', 'lineHeight': '60px',
+                            'borderWidth': '1px', 'borderStyle': 'dashed',
+                            'borderRadius': '5px', 'textAlign': 'center',
+                            'marginTop': '10px'
+                        },
+                        multiple=False
+                    ),
+                    html.Div(id='upload-mesh-status', className='text-center mt-2')
+                ], width=6)
+            ], justify="center", className="mt-4")
+
         ])
-        
- #########DEBUT CHANGEMENT##################               
-        ,dbc.Row([
-    dbc.Col([
-        html.Label("Upload Mesh (.xyz)"),
-        dcc.Upload(
-            id='upload-mesh',
-            children=html.Div(['Drag and Drop or ', html.A('Select a mesh file (.xyz)')]),
-            style={
-                'width': '100%', 'height': '60px', 'lineHeight': '60px',
-                'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
-                'textAlign': 'center', 'marginBottom': '10px'
-            },
-            multiple=False
-        ),
-        html.Div(id='upload-mesh-status')
-    ], width=4),
-])
-        
- #########FIN CHANGEMENT##################       
-        
     ], className="mb-2"),
 
     dcc.Loading(

@@ -10,6 +10,8 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP], 
     suppress_callback_exceptions=True  
 )
+app.config.suppress_callback_exceptions = True
+app.enable_dev_tools(dev_tools_props_check=False)
 
 
 server = app.server
@@ -35,8 +37,10 @@ navbar = dbc.NavbarSimple(
         dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Mesh", href="/page-mesh2d"),
+                dbc.DropdownMenuItem("Mesh 2D", href="/page-mesh2d"),
+                dbc.DropdownMenuItem("Mesh 3D", href="/page-mesh3d"),
                 dbc.DropdownMenuItem("Euler 2D", href="/page-euler2d"),
+                dbc.DropdownMenuItem("VLM-Structure 3D", href="/pages-vlmstructure3D"),
             ],
             nav=True,
             in_navbar=True,

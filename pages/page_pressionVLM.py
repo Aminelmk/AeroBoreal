@@ -1,14 +1,23 @@
 import dash
-from dash import html, dcc, Input, Output
+from dash import html, dcc, Input, Output, ctx
 import dash_bootstrap_components as dbc
 import vtk
 from vtk.util import numpy_support
+import plotly.colors as pc
 import numpy as np
 import plotly.graph_objs as go
 import os
 import pandas as pd
+from urllib.parse import parse_qs, urlparse
+from courbes_pression.Plot_cp import *
 
 dash.register_page(__name__, path="/pages-pressionVLM")
+
+y = np.linspace(-0.7,0.7,10)
+
+x,cp = calculCp(y)
+
+
 
 def load_vtu_file(file_path):
     """
@@ -211,6 +220,88 @@ def polydata_to_plotly_edges(polydata):
     )
     return edge_trace
 
+def load_mesh(file_name):
+        # Lire le fichier
+        with open(file_name, "r") as f:
+            # Lire la première ligne pour obtenir nx et ny
+            nx, ny = map(int, f.readline().split())
+
+            # Charger les coordonnées du maillage (les lignes suivantes)
+            mesh_data = np.loadtxt(f, delimiter=',')
+            point = int((len(mesh_data))/3)
+            print(point)
+
+            # Réorganiser les données dans x, y, z
+            # Le maillage est stocké sous la forme x, y, z en une seule colonne, on les sépare en trois tableaux
+            x = mesh_data[:point]
+            y = mesh_data[point:2 * point]
+            z = mesh_data[2 *point:]
+            print(x,y,z)
+
+        # Retourner les résultats
+        return nx, ny, x, y, z
+
+
+
+def fig_cp_curve():
+
+    mesh_fig = go.Figure()
+
+    global y
+    global x
+    global cp
+    
+    #y = np.linspace(-0.7,0.7,10)
+
+    #x,cp = calculCp(y)
+    colorscale = pc.sequential.Viridis
+    num_curves = len(y)
+
+    # Répéter ou interpoler les couleurs si le nombre de courbes est supérieur à la taille de l'échelle
+    colors = (colorscale * ((num_curves // len(colorscale)) + 1))[:num_curves]  # Répéter les couleurs pour couvrir toutes les courbes
+
+    for i in range(num_curves):
+        # Ajouter la trace avec une couleur correspondant à l'échelle
+        mesh_fig.add_trace(go.Scatter3d(
+            x=x[i],
+            y=y[i] * np.ones(len(x[i])),
+            z=cp[i],
+            mode="lines",
+            line=dict(
+                color=colors[i],  # Appliquer la couleur de la courbe
+                width=4  # Ajuster l'épaisseur de la ligne
+            ),
+            name=f"Courbe {i+1}"
+        ))
+
+    
+    x_outline, y_outline, z_outline = outline()
+
+    mesh_fig.add_trace(go.Scatter3d(
+                        x=x_outline,
+                        y= y_outline ,
+                        z= z_outline,
+                        mode="lines",
+                        line=dict(color="black"),
+                        name=f"Wing Outline"
+                    ))
+
+    
+    
+    mesh_fig.update_layout(
+    scene=dict(
+        xaxis_title='Y',
+        yaxis_title='X',
+        zaxis_title='Cp',
+        aspectmode='data',
+        camera=dict(
+            eye=dict(x=0, y=0, z=0)  # <-- Position de la caméra
+        ), 
+        aspectratio=dict(x=10, y=10, z=0),  # Réduire l'échelle de l'axe z par rapport aux autres
+    ),
+    showlegend=False
+)
+    return mesh_fig
 # Layout with enhanced styling and usability
 layout = dbc.Container(
     [
@@ -241,6 +332,7 @@ layout = dbc.Container(
                             options=[
                                 {"label": "Pressure", "value": "pressure"},
                                 {"label": "Cp", "value": "cp"},
+                                {"label": "Cp2D", "value": "cp2d"},
                                 {"label": "Drag", "value": "drag"},
                                 {"label": "Lift", "value": "lift"}
                             ],
@@ -428,17 +520,23 @@ def update_plot(wing_type, scalar_name, show_panels, camera_state):
         scene_camera=scene_camera,  # Apply the preserved or default camera state
         margin=dict(l=20, r=20, b=20, t=20),
     )
+
+    if scalar_name=='cp2d':
+        fig = fig_cp_curve()
+        fig.update_traces(line=dict(width=5))
+        z_min = min(fig.data[0].z)  # On prend les valeurs de l'axe z du premier trace
+        z_max = max(fig.data[0].z)
+        fig.update_layout(
+        scene=dict(
+            aspectratio=dict(x=0, y=10, z=0),
+            zaxis=dict(
+                range=[z_max, z_min]  # Inversez les valeurs ici
+            )
+        )
+    )
+
     return fig
 
-@dash.callback(
-    Output("camera-state", "data"),
-    Input("3d-plot1", "relayoutData"),
-    prevent_initial_call=True  # Prevent triggering on initial load
-)
-def update_camera_state(relayout_data):
-    if relayout_data and "scene.camera" in relayout_data:
-        return relayout_data["scene.camera"]
-    return dash.no_update
 
 @dash.callback(
     Output("clicked-panel-info", "children"),

@@ -16,7 +16,7 @@ from mesh3d.generate_vlm_mesh import mesh_wing, lovell_mesh_wing, WingElliptic, 
 
 dash.register_page(__name__, path="/page-mesh3d")
 
-
+config = {'scrollZoom': True}
 mesh = None
 
 def display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_struct, mesh_qquatercord):
@@ -27,7 +27,7 @@ def display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_struct, mesh_qquate
     mesh_fig = go.Figure()
 
     # -------------------- STRUCTURE NODES -----------------
-    if show_struct == ['on']:
+    if show_struct == True:
         a=0
         if len(y_mesh[1]) != 2*ny + 1:
             a = 1
@@ -55,7 +55,7 @@ def display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_struct, mesh_qquate
         z_meshfiltered= nbnodes_mesh[2]
 
         # Tracés des lignes uniquement (en noir)
-        if show_nodes == ['on']:
+        if show_nodes == True:
             mesh_fig.add_trace(go.Scatter3d(
                             x=x_meshfiltered[0] + mesh_qquatercord*(x_meshfiltered[nx]-x_meshfiltered[0]),
                             y=y_meshfiltered[0] + mesh_qquatercord*(y_meshfiltered[nx]-y_meshfiltered[0]),
@@ -112,7 +112,7 @@ def display_mesh(mesh, nx, ny, show_nodes, nodes_struc, show_struct, mesh_qquate
         ))
 
 
-    if show_nodes == ['on']:
+    if show_nodes == True:
     # Tracés des points uniquement (en rouge)
         for i in range(nx + 1):
             mesh_fig.add_trace(go.Scatter3d(
@@ -174,90 +174,117 @@ mesh = (np.array([[0. , 0. , 0. , 0. , 0. ],
        [ 0.,  0., -0.,  0.,  0.],
        [ 0.,  0., -0.,  0.,  0.]]))
 
-mesh_fig = display_mesh(mesh, 2, 2, ['on'], 2, ['on'], 0.25)
+mesh_fig = display_mesh(mesh, 2, 2, True, 2, True, 0.25)
 
 layout = html.Div([
     # ===== Geometry Generation =====
     html.Div([
         dbc.Container([
             dbc.Row([
-                html.H2("VLM-Structure Mesh")
-            ]),
+                html.H2("Wings Geometry", className="text-center my-4")]),
 
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(id="mesh-plot", figure=mesh_fig),
+                    dcc.Graph(id="mesh-plot", figure=mesh_fig, config={'scrollZoom':True}),
                      html.Div(id="download-message", style={"display": "none"}),
 
                 ], width=8),
 
                 dbc.Col([
-
-                    dbc.Row([
-                        dbc.Col(html.Label("Show mesh nodes"), width="auto"),  # La largeur automatique pour le label
-                        dbc.Col(dcc.Checklist(
-                            id='show-nodes-button',
-                            options=[{"label": "", "value": "on"}],  # Pas de texte
-                            value=["on"],  # coché par défaut
-                            inputStyle={"transform": "scale(2)", "margin": "0"}  # checkbox plus petit
-                        ), width="auto")  # La largeur automatique pour la checklist
+                    html.Div([
+                        daq.BooleanSwitch(
+                                    id="show-nodes-button",
+                                    on=True,
+                                    label="Show mesh points",
+                                    labelPosition="bottom",
+                                    style={"marginRight": "20px"}  # Space between the switch and button
+                                ),
                     ]),
 
                     dbc.Accordion([
                         dbc.AccordionItem([
                             html.Div([
-                                html.Label("Number of panels in X"),
-                                    dcc.Input(id='panelsx', type='number', value=2, className="mb-2"),
+                                html.H6("Half-wing Caracteristics"),
+                                html.Div([
+                                html.Label("Number of panels in X: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="panelsx", type="number", min=1, value=2,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                html.Label("Number of panels in Y"),
-                                    dcc.Input(id='panelsy', type='number', value=2, className="mb-2"),
+                            html.Div([
+                                html.Label("Number of panels in Y: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="panelsy", type="number", min=1, value=2,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+                            
+                            html.Br(),
 
-                                html.Label("Leading Edge Position on the x-axis (m)"),
-                                    dcc.Input(id='lepos', type='number', value=0, className="mb-2"),
-                                
-                                html.Label("z-axis coordinate (m)"),
-                                    dcc.Input(id='z0', type='number', value=0, className="mb-2"),
+                            html.H6("Leading Edge Position"),
 
-                                html.Label("Fuselage diameter (m)"),
-                                    dcc.Input(id='y0', type='number', value=0, className="mb-2"),
+                            html.Div([
+                                html.Label("X-axis (m): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="lepos", type="number", value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
+                            html.Div([
+                                html.Label("Z-axis (m): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="z0", type="number", value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
                             ])
                         ], title="General Settings"),
 
                         dbc.AccordionItem([
                             dbc.Row([
-                                dbc.Label("Select Wing Type:", width="auto"),
+                                dbc.Label("Select Wing Type:", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
                                 dcc.Dropdown(
                                     id="type-dropdown",
                                     options=[{"label": key, "value": key} for key in ['Custom', 'Lovell', 'Elliptic', 'CRM']],
                                     value='Custom',
                                     style={"flex": 1}  # Ensures it takes up remaining space
                                 ),
-                            ]),
-
+                            ], className="row d-flex align-items-center mt-2"),
+                            html.Br(),
 
                             html.Div([
+
                                 html.Div([
-                                    html.Label("Aspect Ratio"),
-                                    dcc.Input(id='custom_ar', type='number', value=9, className="mb-2"),
+                                html.Label("Aspect Ratio: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_ar", type="number", min=1e-15, value=9,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Cord (m)"),
-                                    dcc.Input(id='custom_cord', type='number', value=1, className="mb-2"),
+                                html.Div([
+                                html.Label("Cord (m): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_cord", type="number", min=1e-15, value=1,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Taper Ratio [0,1]"),
-                                    #dcc.Input(id='custom_lam', type='number', value=1, className="mb-2"),
-                                    dcc.Slider(0, 1, step=0.1, value=1, id="custom_lam"),
+                            html.Div([
+                                html.Label("Taper Ratio: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_lam", type="number", min=1e-15, max = 1, value=1,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Sweep Angle (°)"),
-                                    dcc.Input(id='custom_sweep', type='number', value=0, className="mb-2"),
+                            html.Div([
+                                html.Label("Sweep Angle (°): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_sweep", type="number", min=-89, max = 89, value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Dihedral Angle (°)"),
-                                    dcc.Input(id='custom_diedre', type='number', value=0, className="mb-2"),
+                            html.Div([
+                                html.Label("Dihedral Angle (°): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_diedre", type="number", min=-89, max = 89, value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Twist Angle (°)"),
-                                    dcc.Input(id='custom_twist', type='number', value=0, className="mb-2")
-
-                                ], className="controls"),
+                            html.Div([
+                                html.Label("Twist Angle (°): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="custom_twist", type="number", min=-89, max = 89, value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
                             ], id="custom-controls", style={"display": "none"}),
                             
@@ -270,21 +297,30 @@ layout = html.Div([
                             ], id="lovell-controls", style={"display": "none"}),
 
                             html.Div([
+
                                 html.Div([
-                                    html.Label("Aspect Ratio"),
-                                    dcc.Input(id='ell_ar', type='number', value=9, className="mb-2"),
+                                html.Label("Aspect Ratio: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="ell_ar", type="number", min=1e-15, value=9,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Cord (m)"),
-                                    dcc.Input(id='ell_cord', type='number', value=1, className="mb-2"),
+                                html.Div([
+                                html.Label("Cord (m): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="ell_cord", type="number", min=1e-15, value=1,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Lamba [0,1]"),
-                                    #dcc.Input(id='custom_lam', type='number', value=1, className="mb-2"),
-                                    dcc.Slider(0, 1, step=0.1, value=1, id="ell_lam"),
+                            html.Div([
+                                html.Label("Taper Ratio: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="ell_lam", type="number", min=1e-15, max = 1, value=1,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                                    html.Label("Sweep Angle (°)"),
-                                    dcc.Input(id='ell_sweep', type='number', value=0, className="mb-2")
-
-                                ], className="controls"),
+                            html.Div([
+                                html.Label("Sweep Angle (°): ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="ell_sweep", type="number", min=-89, max = 89, value=0,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
                             ], id="elliptic-controls", style={"display": "none"}),
 
@@ -292,24 +328,26 @@ layout = html.Div([
                         ], title="Wing Type"),
 
                         dbc.AccordionItem([
-                            dbc.Row([
-                                dbc.Col(html.Label("Show structure"), width="auto"),  # La largeur automatique pour le label
-                                dbc.Col(dcc.Checklist(
-                                    id='show-structure-button',
-                                    options=[{"label": "", "value": "on"}],  # Pas de texte
-                                    value=["on"],  # coché par défaut
-                                    inputStyle={"transform": "scale(2)", "margin": "0"}  # checkbox plus petit
-                                ), width="auto")  # La largeur automatique pour la checklist
-                            ]),
+                            daq.BooleanSwitch(
+                                    id="show-structure-button",
+                                    on=True,
+                                    label="Show structure",
+                                    labelPosition="bottom",
+                                    style={"marginRight": "20px"}  # Space between the switch and button
+                                ),
                             
                             html.Div([
-                                html.P("Number of elements:"),
-                                dcc.Slider(2, 14, step=2, value=2, id="n-nodes-slider"),
-                            ]),
+                                html.Label("Number of elements: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="n-nodes-slider", type="number", min=2, value=2,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
                             html.Div([
-                                html.Label("Quater Cord Ratio"),
-                                dcc.Input(id='mesh_qquatercord', type='number', value=0.25, className="mb-2"),
-                            ]),
+                                html.Label("Quater Cord Ratio: ", className="col-8", style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="mesh_qquatercord", type="number", value=0.25,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+
                         ], title="Structure (for visualization only)"),
                     ], id="accordion", flush=True),
                     html.Div([
@@ -356,7 +394,6 @@ def update_control_panel(selected_option):
         Input("type-dropdown", "value"),
         Input("panelsx", "value"),
         Input("panelsy", "value"),
-        Input("y0", "value"),
         Input("lepos", "value"),
         Input("custom_ar", "value"),
         Input("custom_cord", "value"),
@@ -373,15 +410,16 @@ def update_control_panel(selected_option):
         Input("n-nodes-slider", "value"),
         #Input("button-generate-mesh3d", "n_clicks"),
         Input("button-download-mesh3d", "n_clicks"),
-        Input("show-structure-button", "value"),
-        Input("show-nodes-button", "value"),
+        Input("show-structure-button", "on"),
+        Input("show-nodes-button", "on"),
         Input("mesh_qquatercord", "value"),  
     ],
     prevent_initial_call=True
 )
-def update_mesh(selected_type, nx, ny, y0, LE, cust_AR, cust_cord, cust_sweep, cust_lam, cust_diedre, cust_twist, z0, ell_AR, ell_cord, ell_sweep, ell_lam, nodes_struc, download, show_structure, show_nodes, mesh_qquatercord):
+def update_mesh(selected_type, nx, ny, LE, cust_AR, cust_cord, cust_sweep, cust_lam, cust_diedre, cust_twist, z0, ell_AR, ell_cord, ell_sweep, ell_lam, nodes_struc, download, show_structure, show_nodes, mesh_qquatercord):
     #print(selected_type)
     global mesh
+    y0=0
 
     nodes_struc = nodes_struc + 1
     ell_sweep = ell_sweep/45
@@ -438,7 +476,7 @@ def update_mesh(selected_type, nx, ny, y0, LE, cust_AR, cust_cord, cust_sweep, c
     Input("panelsx", "value"),
     Input("panelsy", "value"),
     Input("button-download-mesh3d", "n_clicks"),
-    Input("show-nodes-button", "value"),
+    Input("show-nodes-button", "on"),
     prevent_initial_call=True,
 )
 def save_mesh3d(nx, ny, download_clicks, show_nodes):
@@ -455,7 +493,6 @@ def save_mesh3d(nx, ny, download_clicks, show_nodes):
     if triggered_id in [
     "panelsx",
     "panelsy",
-    "y0",
     "lepos",
     "custom_ar",
     "custom_cord",

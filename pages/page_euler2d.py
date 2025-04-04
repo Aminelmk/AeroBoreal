@@ -111,106 +111,118 @@ def create_surface_plot(variable, title, colorbar_title, x_2d, y_2d):
 # ======================================================================
 
 layout = html.Div([
+    dbc.Container([
     html.H1("Euler Solver Configuration", className="mb-4 text-center"),
 
-    dbc.Card([
-        dbc.CardBody([
+    dbc.Row([
+        dbc.Col([
+        html.H4("Fluid Properties"),
+        html.Br(),
+        html.Div([
+            html.Label("Mach Number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="Mach", type="number", min=0, max=10, value=0.5, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
 
-            # Ligne 1
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Number of Threads"),
-                    dcc.Input(id='num_threads', type='number', value=4, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Mach Number"),
-                    dcc.Input(id='Mach', type='number', value=0.5, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Angle of Attack (α)"),
-                    dcc.Input(id='alpha', type='number', value=5.0, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("CFL Number"),
-                    dcc.Input(id='CFL_number', type='number', value=3.0, step=0.1, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Max Iterations"),
-                    dcc.Input(id='it_max', type='number', value=10000, className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+        html.Div([
+            html.Label("Angle of Attack (α): ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="alpha", type="number", min=0, value=5.0, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
 
-            # Ligne 2
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Pressure (p_inf) [Pa]"),
-                    dcc.Input(id='p_inf', type='number', value=1e5, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Temperature (T_inf) [K]"),
-                    dcc.Input(id='T_inf', type='number', value=300.0, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("k2 (2nd Order Dissipation)"),
-                    dcc.Input(id='k2', type='number', value=2, step=0.1, className="mb-2"),
-                ], width=2),
-                dbc.Col([
-                    html.Label("k4 (4th Order Dissipation)"),
-                    dcc.Input(id='k4', type='number', value=2, step=0.01, className="mb-2"),
-                ], width=2),
-            ], className="mb-3", justify="center"),
+        html.Div([
+            html.Label("Pressure (p_inf) [Pa]: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="p_inf", type="number", value=1e5, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
 
-            # Ligne 3 : Dropdowns
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Multigrid"),
-                    dcc.Dropdown(
-                        id='multigrid',
-                        options=[{'label': 'Disabled', 'value': 0}, {'label': 'Enabled', 'value': 1}],
-                        value=0,
-                        clearable=False
-                    ),
-                ], width=2),
-                dbc.Col([
-                    html.Label("Residual Smoothing"),
-                    dcc.Dropdown(
-                        id='residual_smoothing',
-                        options=[{'label': 'Disabled', 'value': 0}, {'label': 'Enabled', 'value': 1}],
-                        value=0,
-                        clearable=False
-                    ),
-                ], width=2),
-            ], className="mb-4", justify="center"),
+        html.Div([
+            html.Label("Temperature (T_inf) [K]: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="T_inf", type="number", value=300, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
 
-            # Ligne 4 : Bouton
-            dbc.Row([
-                dbc.Col(
-                    dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2"),
-                    width="auto"
-                )
-            ], justify="center"),
 
-            # Ligne 5 : Upload Mesh
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Upload Mesh (.xyz)", className="text-center"),
-                    dcc.Upload(
-                        id='upload-mesh',
-                        children=html.Div(['Drag and Drop or ', html.A('Select a mesh file (.xyz)')]),
-                        style={
-                            'width': '100%', 'height': '60px', 'lineHeight': '60px',
-                            'borderWidth': '1px', 'borderStyle': 'dashed',
-                            'borderRadius': '5px', 'textAlign': 'center',
-                            'marginTop': '10px'
-                        },
-                        multiple=False
-                    ),
-                    html.Div(id='upload-mesh-status', className='text-center mt-2')
-                ], width=6)
-            ], justify="center", className="mt-4")
+        ],width=5),
 
-        ])
-    ], className="mb-2"),
+        dbc.Col([], width=1),
+
+        dbc.Col([
+        html.H4("Solver Properties"),
+        html.Br(),
+        html.Div([
+            html.Label("CFL Number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="CFL_number", type="number", value=3.0, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
+
+        html.Div([
+            html.Label("Max Iterations: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="it_max", type="number", value=1000, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
+
+        html.Div([
+            html.Label("k2 (2nd Order Dissipation): ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="k2", type="number", value=2, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
+
+        html.Div([
+            html.Label("k4 (4th Order Dissipation): ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+            dcc.Input(id="k4", type="number", value=2, style={"flex": "1"}),
+        ], className="row d-flex align-items-center mt-2"),
+
+        ],width=5),
+    ], justify="center"),
+
+    html.Br(),
+    
+    # Ligne 3 : Dropdowns
+    dbc.Row([
+        dbc.Col([
+            html.Label("Multigrid"),
+            dcc.Dropdown(
+                id='multigrid',
+                options=[{'label': 'Disabled', 'value': 0}, {'label': 'Enabled', 'value': 1}],
+                value=0,
+                clearable=False
+            ),
+        ], width=2),
+        dbc.Col([
+            html.Label("Residual Smoothing"),
+            dcc.Dropdown(
+                id='residual_smoothing',
+                options=[{'label': 'Disabled', 'value': 0}, {'label': 'Enabled', 'value': 1}],
+                value=0,
+                clearable=False
+            ),
+        ], width=2),
+    ], className="mb-4", justify="center"),
+
+    
+
+    # Ligne 5 : Upload Mesh
+    dbc.Row([
+        dbc.Col([
+            html.Label("Upload Mesh (.xyz)", className="text-center"),
+            dcc.Upload(
+                id='upload-mesh',
+                children=html.Div(['Drag and Drop or ', html.A('Select a mesh file (.xyz)')]),
+                style={
+                    'width': '100%', 'height': '60px', 'lineHeight': '60px',
+                    'borderWidth': '1px', 'borderStyle': 'dashed',
+                    'borderRadius': '5px', 'textAlign': 'center',
+                    'marginTop': '10px'
+                },
+                multiple=False
+            ),
+            html.Div(id='upload-mesh-status', className='text-center mt-2')
+        ], width=6)
+    ], justify="center", className="mt-4"),
+
+    html.Br(),
+
+    # Ligne 4 : Bouton
+    dbc.Row([
+        dbc.Col(
+            dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2"),
+            width="auto"
+        )
+    ], justify="center"),
 
     dcc.Loading(
         id="solver-loading",
@@ -218,7 +230,8 @@ layout = html.Div([
         children=html.Div(id='solver-status', className="mt-3")
     ),
 
-    html.Div(id='visualization-redirect', style={'display': 'none'})
+    html.Div(id='visualization-redirect', style={'display': 'none'}),
+    ])
 ])
 
 #########DEBUT CHANGEMENT################## 
@@ -307,8 +320,7 @@ viz_layout = dbc.Container([
     [Output('solver-status', 'children'),
      Output('visualization-redirect', 'children')],
     [Input('run_solver', 'n_clicks')],
-    [State('num_threads', 'value'),
-     State('Mach', 'value'),
+    [State('Mach', 'value'),
      State('alpha', 'value'),
      State('CFL_number', 'value'),
      State('p_inf', 'value'),
@@ -320,7 +332,7 @@ viz_layout = dbc.Container([
      State('it_max', 'value')],
     prevent_initial_call=True
 )
-def run_simulation(n_clicks, num_threads, Mach, alpha, CFL_number, p_inf, T_inf,
+def run_simulation(n_clicks, Mach, alpha, CFL_number, p_inf, T_inf,
                    multigrid, residual_smoothing, k2, k4, it_max):
      #########DEBUT CHANGEMENT##################      
     if not n_clicks:
@@ -332,7 +344,7 @@ def run_simulation(n_clicks, num_threads, Mach, alpha, CFL_number, p_inf, T_inf,
     mesh_file = uploaded_mesh_path if os.path.exists(uploaded_mesh_path) else default_mesh_path
      #########FIN CHANGEMENT##################       
     # Génération du fichier d'entrée
-    input_content = f"""num_threads = {num_threads}
+    input_content = f"""num_threads = 1
 mesh_file = {mesh_file}
 Mach = {Mach}
 alpha = {alpha}

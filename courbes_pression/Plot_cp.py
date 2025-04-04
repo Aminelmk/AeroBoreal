@@ -77,14 +77,10 @@ def calculCp(y):
     ny = int(filename.split("_")[5])
     it_max = int(max(it_max))
     nomFichier = f"temp/output_{it_max}_nx_{nx}_ny_{ny}_Cl.csv"
-    
     df = pd.read_csv(nomFichier, encoding="utf-8")
     x_point = df["x"].values[:]
     y_point = df["y"].values[:]
     sweep = abs(np.rad2deg(np.atan((x_point[int(ny/2)] - x_point[ny])/(y_point[ny] - y_point[int(ny/2)]))))
-    
-    
-
     y_moy = np.zeros(ny)
     for i in range(ny):
         y_moy[i] = (y_point[i] + y_point[i+1])/2
@@ -162,7 +158,23 @@ def calculCp(y):
         cp.append(coef_prof[0,i]*cp_prof[0] + coef_prof[1,i]*cp_prof[1])
         x_final.append(coef_prof[0,i]*x_prof[0] + coef_prof[1,i]*x_prof[1])
     
+
+    corde_points = np.zeros(ny+1)
+    LE = np.zeros(ny+1)
+    for i in range(ny+1):
+        corde_points[i] = abs(x_point[i] - x_point[i+nx*(ny+1)])
+        LE[i] = x_point[i]
+    coef_geo,indices_geo = coefPond(y,y_point)
+
+    corde = np.zeros(len(y))
+    dec = np.zeros(len(y))
+    for i in range(len(y)):
+        corde[i] = coef_geo[0,i]*corde_points[int(indices_geo[0,i])] + coef_geo[1,i]*corde_points[int(indices_geo[1,i])]
+        dec[i] = coef_geo[0,i]*LE[int(indices_geo[0,i])] + coef_geo[1,i]*LE[int(indices_geo[1,i])]
+        x_final[i] *= corde[i]
+        x_final[i] += dec[i]
     
+
     return x_final,cp
     
 
@@ -171,24 +183,25 @@ def calculCp(y):
 
 
 
-y = np.linspace(-0.7,0.7,100)
+# y = np.linspace(-0.7,0.7,100)
+# y = [-0.7,0.3,0.5]
 
-x,cp = calculCp(y)
+# x,cp = calculCp(y)
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
 
-for i in range(len(y)):
-    ax.plot(x[i],y[i]*np.ones(len(x[i])),cp[i])
-ax.invert_zaxis()
+# for i in range(len(y)):
+#     ax.plot(x[i],y[i]*np.ones(len(x[i])),cp[i])
+# ax.invert_zaxis()
 
 # ax.set_xlabel('x')
 # ax.set_ylabel('y') 
 # ax.set_zlabel('Cp')
 # ax.set_title('Cp en fonction de x et y')
 # plt.grid()
-plt.show()
+# plt.show()
     
 
 

@@ -68,11 +68,11 @@ layout = html.Div([
                 html.H1(html.Strong("Fluid Settings")),
                 dbc.Col([
                     html.Label("Mach Number"),
-                    dcc.Input(id='vlm_Mach', type='number', value=0.5, className="mb-2"),
+                    dcc.Input(id='vlm_Mach', type='number', value=0.85, className="mb-2"),
                 ], width=2),
                 dbc.Col([
                     html.Label("Angle of Attack (deg)"),
-                    dcc.Input(id='vlm_alpha', type='number', value=5.0, className="mb-2"),
+                    dcc.Input(id='vlm_alpha', type='number', value=1.0, className="mb-2"),
                 ], width=2),
                  dbc.Col([
                     html.Label("Pressure (p_inf) [Pa]"),
@@ -140,7 +140,7 @@ layout = html.Div([
                 ], width=2),
                 dbc.Col([
                     html.Label("Quater Cord Ratio"),
-                    dcc.Input(id='vlm_qquatercord', type='number', value=0.25, className="mb-2"),
+                    dcc.Input(id='vlm_qquatercord', type='number', value=0.5, className="mb-2"),
                 ], width=2),
             ], className="mb-3", justify="center"),
 
@@ -159,17 +159,19 @@ layout = html.Div([
                         {'name': 'V1', 'id': 'col8_struct', 'editable': True},
                         {'name': 'V2', 'id': 'col9_struct', 'editable': True}
                     ], style_cell={'width': 'auto', 'minWidth': '100px', 'maxWidth': '200px'},
+
         
-                    data=[{'col0_struct':1, 'col1_struct': '108201.33', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.57e12', 'col5_struct': '8.07e10', 'col6_struct': '4.11e10', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':2,'col1_struct': '91660.88', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '9.67e11', 'col5_struct': '3.56e10', 'col6_struct': '1.55e10', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':3,'col1_struct': '75028.56', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '5.35e11', 'col5_struct': '1.53e10', 'col6_struct': '5.90e09', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':4,'col1_struct': '62055.53', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.03e11', 'col5_struct': '7.69e09', 'col6_struct': '2.79e09', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':5,'col1_struct': '55725.77', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '2.20e11', 'col5_struct': '5.39e09', 'col6_struct': '1.92e09', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':6,'col1_struct': '49264.39', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.52e11', 'col5_struct': '3.70e09', 'col6_struct': '1.32e09', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':7,'col1_struct': '42984.77', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.01e11', 'col5_struct': '2.48e09', 'col6_struct': '8.85e08', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':8,'col1_struct': '36710.73', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '6.28e10', 'col5_struct': '1.61e09', 'col6_struct': '5.85e08', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':9,'col1_struct': '30467.23', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.59e10', 'col5_struct': '9.71e08', 'col6_struct': '3.64e08', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'},
-                          {'col0_struct':10,'col1_struct': '27328.40', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '2.59e10', 'col5_struct': '7.19e08', 'col6_struct': '2.73e08', 'col7_struct': '0', 'col8_struct': '1', 'col9_struct': '0'}],
+                    data =[{'col0_struct': 1, 'col1_struct': '2859.16', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.42E+06', 'col5_struct': '5.60E+07', 'col6_struct': '6.37e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 2, 'col1_struct': '2412.57', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '4.59E+05', 'col5_struct': '2.62E+07', 'col6_struct': '2.16e+05', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 3, 'col1_struct': '1963.50', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '2.09E+05', 'col5_struct': '1.36E+07', 'col6_struct': '7.13e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 4, 'col1_struct': '1613.23', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '8.50E+04', 'col5_struct': '6.19E+06', 'col6_struct': '2.88e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 5, 'col1_struct': '1442.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.42E+04', 'col5_struct': '2.81E+06', 'col6_struct': '1.80e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 6, 'col1_struct': '1267.87', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.86E+04', 'col5_struct': '1.78E+06', 'col6_struct': '1.10e+04', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 7, 'col1_struct': '1098.32', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.19E+04', 'col5_struct': '1.03E+06', 'col6_struct': '6.38e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 8, 'col1_struct': '928.92', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '6.36E+03', 'col5_struct': '5.68E+05', 'col6_struct': '3.51e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 9, 'col1_struct': '760.34', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '3.21E+03', 'col5_struct': '2.90E+05', 'col6_struct': '1.68e+03', 'col7_struct': '0.00', 'col8_struct': '1.00', 'col9_struct': '0.00'},
+                           {'col0_struct': 10, 'col1_struct': '675.59', 'col2_struct': '1.87e+05', 'col3_struct': '0.31', 'col4_struct': '1.44E+03', 'col5_struct': '1.29E+05', 	'col6_struct':	'1.04e+03','col7_struct':'0.00','col8_struct':'1.00','col9_struct':'0.00'}],
+                    
 
                     row_deletable=True,  # Permet de supprimer des lignes
                     style_table={'overflowX': 'auto', 'border': '1px solid #dee2e6'},

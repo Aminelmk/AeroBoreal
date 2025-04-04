@@ -8,4 +8,4 @@ profils_paths = SOLVEUR_COUPLE/database/Coupey0,7933.xyz SOLVEUR_COUPLE/database
 it_max = 100
 wing_mesh_path = SOLVEUR_COUPLE/../mesh3d.x
 nb_nodes = 11
-quarter_chord_ratio = 0.25
+quarter_chord_ratio = 0.5

@@ -13,30 +13,92 @@ CSV_FILE = "user_inputs.csv"
 # 🔹 Layout for the Home Page
 layout = html.Div([
 
-    # # VLM Solver Inputs
-    # html.H2("Vortex Lattice Method (VLM) Inputs"),
-    # html.Div([
-    #     dbc.Row([
-    #         dbc.Col(dcc.Input(id="nx", type="number", placeholder="Panels (nx)", )),
-    #         dbc.Col(dcc.Input(id="ny", type="number", placeholder="Panels (ny)", )),
-    #     ]),
-    #     dbc.Row([
-    #         dbc.Col(dcc.Input(id="AR", type="number", placeholder="Aspect Ratio", )),
-    #         dbc.Col(dcc.Input(id="alpha_input", type="number", placeholder="Angle of Attack (°)", )),
-    #     ]),
-    #     dbc.Row([
-    #         dbc.Col(dcc.Input(id="vlm_p_inf", type="number", placeholder="Pressure (Pa)")),
-    #         dbc.Col(dcc.Input(id="vlm_T_inf", type="number", placeholder="Temperature (K)")),
-    #         dbc.Col(dcc.Input(id="vlm_Mach", type="number", placeholder="Mach Number")),
-    #     ]),
-    # ]),
-    # html.Button("Save VLM Inputs", id="save_vlm", n_clicks=0),
-    #
-    # # Display Previous Entries
-    # html.Div([
-    #     html.H3("Previous Entries"),
-    #     html.Ul(id="history-list")
-    # ]),
+html.Div([
+        html.H1("Welcome to the Aerospace Engineering Simulation Software", 
+                style={
+                    "textAlign": "center", 
+                    "fontSize": "48px", 
+                    "fontWeight": "bold", 
+                    "color": "black",  
+                    "textShadow": "3px 3px 6px rgba(0, 0, 0, 0.3)",  
+                    "padding": "20px"
+                }),
+        html.P(
+            "This software suite is designed for subsonic and transonic flow simulations, incorporating structural deformations. "
+            "It includes the essential steps for aero-structural analysis: CAD geometric processing, parameterization, mesh generation, "
+            "solution of linear equations, and post-processing of results. The system is designed for ease of use, with both graphical and non-graphical interfaces.",
+            style={"textAlign": "center", "fontSize": "18px", "color": "#7f8c8d", "maxWidth": "800px", "margin": "0 auto"}
+        ),
+    ], style={"paddingTop": "40px", "paddingBottom": "40px"}),
+
+
+    html.Div([
+        html.H3("Explore the Software Features", 
+                style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
+        
+        dbc.Row([
+            dbc.Col(
+                dbc.Button("Mesh 2D", color="primary", href="/page-mesh2d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                width=6
+            ),
+            dbc.Col(
+                dbc.Button("Mesh 3D", color="primary", href="/page-mesh3d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                width=6
+            ),
+        ], style={"marginBottom": "30px"}),
+
+        dbc.Row([
+            dbc.Col(
+                dbc.Button("Euler 2D", color="primary", href="/page-euler2d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                width=6
+            ),
+            dbc.Col(
+                dbc.Button("VLM-Structure 3D", color="primary", href="/pages-vlmstructure3D", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                width=6
+            ),
+        ], style={"marginBottom": "30px"}),
+    ], style={"padding": "20px"}),
+
+    html.Div([
+        html.H3("Page Descriptions", 
+                style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
+
+  
+        dbc.Row([
+            dbc.Col([
+                html.H4("Mesh 2D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
+                html.P(
+                    "Create and visualize 2D meshes for aerodynamic simulations. Define geometry and grid resolution to generate meshes used for fluid dynamics analysis.",
+                    style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                )
+            ], width=6),
+            dbc.Col([
+                html.H4("Mesh 3D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
+                html.P(
+                    "Generate and visualize 3D meshes for structural and fluid-structure simulations. Supports complex geometries, enhancing the accuracy of your models.",
+                    style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                )
+            ], width=6),
+        ], style={"marginBottom": "30px"}),
+
+
+        dbc.Row([
+            dbc.Col([
+                html.H4("Euler 2D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
+                html.P(
+                    "Perform aerodynamic simulations for 2D airfoils using the Euler solver. Set Mach number, angle of attack, and other parameters to analyze airfoil performance.",
+                    style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                )
+            ], width=6),
+            dbc.Col([
+                html.H4("VLM-Structure 3D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
+                html.P(
+                    "Conduct aero-structural simulations for complex 3D configurations like wings and aircraft. This page integrates both fluid and structural models for comprehensive analysis.",
+                    style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                )
+            ], width=6),
+        ], style={"marginBottom": "30px"}),
+    ], style={"padding": "20px"})
 ])
 
 # # 🔹 Callback to Update Graphs Dynamically

@@ -18,6 +18,7 @@ y = np.linspace(-0.7,0.7,10)
 x,cp = calculCp(y)
 
 
+
 def load_vtu_file(file_path):
     """
     Load a VTU file from disk using VTK and convert it to vtkPolyData.

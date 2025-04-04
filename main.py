@@ -38,6 +38,7 @@ navbar = dbc.NavbarSimple(
             children=[
                 dbc.DropdownMenuItem("Mesh 2D", href="/page-mesh2d"),
                 dbc.DropdownMenuItem("Euler 2D", href="/page-euler2d"),
+                dbc.DropdownMenuItem("Results 2D", href="/page-euler2d-results"),
             ],
             nav=True,
             in_navbar=True,
@@ -62,10 +63,10 @@ navbar = dbc.NavbarSimple(
 )
 
 # App Layout (Navigation + Page Container)
-app.layout = html.Div([
+app.layout = html.Div([dbc.DropdownMenuItem("Results 3D", href="/pages-pressionVLM"),
     navbar,
     dash.page_container  # This will display the selected page
 ])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

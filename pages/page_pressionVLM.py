@@ -403,6 +403,20 @@ layout = dbc.Container(
                     width=6
                 )
             ]
+        ),
+
+         # Cl and alpha discrete plots
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Graph(id="Cl-discrete", style={"width": "100%", "height": "400px"}),
+                    width=6
+                ),
+                dbc.Col(
+                    dcc.Graph(id="alpha-discrete", style={"width": "100%", "height": "400px"}),
+                    width=6
+                )
+            ]
         )
     ],
     fluid=True,
@@ -587,7 +601,7 @@ def display_clicked_panel_info(click_data):
 import re  # For extracting numbers from filenames
 
 @dash.callback(
-    [Output("tz-vs-y-plot", "figure"), Output("ry-vs-y-plot", "figure")],
+    [Output("tz-vs-y-plot", "figure"), Output("ry-vs-y-plot", "figure"), Output("Cl-discrete", "figure"), Output("alpha-discrete", "figure")],
     Input("3d-plot1", "relayoutData"),  # Trigger when the 3D plot is updated
 )
 def update_displacement_plots(relayout_data):
@@ -600,7 +614,7 @@ def update_displacement_plots(relayout_data):
         # Return empty figures if no displacement files are found
         empty_fig = go.Figure()
         empty_fig.update_layout(title="No displacement data available.")
-        return empty_fig, empty_fig
+        return empty_fig, empty_fig, empty_fig, empty_fig
 
     # Identify the latest displacement file (highest i)
     latest_file_path = os.path.join(temp_folder, displacement_files[-1])
@@ -629,6 +643,45 @@ def update_displacement_plots(relayout_data):
         template="plotly_white",
     )
 
-    return tz_vs_y_fig, ry_vs_y_fig
+
+
+    it_max = []
+    for filename in os.listdir("temp"):  
+        if 'displacement' not in filename : 
+            it_max.append(filename.split("_")[1])
+    nx = int(filename.split("_")[3])
+    ny = int(filename.split("_")[5])
+    it_max = int(max(it_max))
+    nomFichier = f"temp/output_{it_max}_nx_{nx}_ny_{ny}_Cl.csv"
+    df = pd.read_csv(nomFichier, encoding="utf-8")
+    y_aero = (df["y"].values[:ny] + df["y"].values[1:ny+1])/2
+    Cl = df["Cl"].values[:ny]
+    alpha_e = np.rad2deg(df["alpha_e"].values[:ny])
+
+
+    # Create the Cl vs. y plot
+    Cl_discrete = go.Figure()
+    Cl_discrete.add_trace(go.Scatter(x=y_aero/span, y=Cl, mode="lines+markers", name="Cl vs span"))
+    Cl_discrete.update_layout(
+        title="Cl vs. y/span",
+        xaxis_title="y/span",
+        yaxis_title="Cl",
+        template="plotly_white",
+    )
+
+    # Create the alpha vs. y plot
+    alpha_discrete = go.Figure()
+    alpha_discrete.add_trace(go.Scatter(x=y_aero/span, y=alpha_e, mode="lines+markers", name="alpha vs span"))
+    alpha_discrete.update_layout(
+        title="alpha_e vs. y/span",
+        xaxis_title="y/span",
+        yaxis_title="alpha_e (deg)",
+        template="plotly_white",
+    )
+
+
+
+
+    return tz_vs_y_fig, ry_vs_y_fig, Cl_discrete, alpha_discrete
 
 

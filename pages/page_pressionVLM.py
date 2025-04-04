@@ -13,9 +13,7 @@ from courbes_pression.Plot_cp import *
 
 dash.register_page(__name__, path="/pages-pressionVLM")
 
-y = np.linspace(-0.7,0.7,10)
 
-x,cp = calculCp(y)
 
 
 
@@ -245,11 +243,10 @@ def load_mesh(file_name):
 
 def fig_cp_curve():
 
-    mesh_fig = go.Figure()
+    y = np.linspace(-0.7,0.7,10)
 
-    global y
-    global x
-    global cp
+    x,cp = calculCp(y)
+    mesh_fig = go.Figure()
     
     #y = np.linspace(-0.7,0.7,10)
 

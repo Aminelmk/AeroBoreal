@@ -69,4 +69,4 @@ app.layout = html.Div([dbc.DropdownMenuItem("Results 3D", href="/pages-pressionV
 ])
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)

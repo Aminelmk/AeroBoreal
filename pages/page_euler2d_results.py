@@ -51,6 +51,8 @@ coeff = {
     "CM": None,
 }
 
+cp = None
+
 airfoil_x = None
 airfoil_y = None
 
@@ -119,7 +121,7 @@ def create_surface_plot(variable, title, colorbar_title, x_2d, y_2d):
     grid_z = np.linspace(-5, 5, 100)
     grid_X, grid_Z = np.meshgrid(grid_x, grid_z)
 
-    airfoil_len = 2*x_2d.shape[1]
+    airfoil_len = x_2d.shape[1]
 
     x_flat = x_2d.flatten()
     y_flat = y_2d.flatten()
@@ -207,9 +209,13 @@ layout = dbc.Container([
 
         dbc.Row(
             [
-                dbc.Col(dcc.Input(id='mesh-file', type='text', value="../temp/mesh.xyz", className="me-2"),
+                dbc.Col(dcc.Input(id='mesh-file', type='text', value="../temp/mesh.xyz", readOnly=True,
+                                  disabled=True,
+                        className="me-2"),
                         width="auto"),
-                dbc.Col(dcc.Input(id='result', type='text', value="/test.q", className="me-2"), width="auto"),
+                dbc.Col(dcc.Input(id='result', type='text', value="/test.q", readOnly=True,
+                                  disabled=True,
+                                  className="me-2"), width="auto"),
                 dbc.Col(dbc.Button("Load results", id="load-results", n_clicks=0), width="auto"),
             ],
             className="d-flex align-items-center justify-content-center",
@@ -235,7 +241,7 @@ layout = dbc.Container([
                     html.Label("Show mesh: ", className="me-2",
                                style={"text-align": "left", "white-space": "nowrap", "display": "flex",
                                       "align-items": "center"}),
-                    daq.BooleanSwitch(id="show-mesh", on=False, style={"margin-top": "-15px"})
+                    daq.BooleanSwitch(id="show-mesh", on=False, disabled=True, style={"margin-top": "-15px"})
                 ], className="d-flex align-items-center justify-content-between w-90", style={"width": "80%", "margin": "0 auto"}),
 
                 html.Div([
@@ -333,7 +339,7 @@ def interpolate(x, y, var):
 )
 def load_results(load_button):
 
-    global nx, ny, x, y, grid_x, grid_y, dep_var, interp_var, coeff, airfoil_x, airfoil_y
+    global nx, ny, x, y, grid_x, grid_y, dep_var, interp_var, coeff, airfoil_x, airfoil_y, cp
 
     mesh_path = maillage_depuis_input()
     nx, ny, x, y = parse_mesh(mesh_path)
@@ -364,10 +370,7 @@ def load_results(load_button):
 
     dropdown_options = []
 
-    for key in interp_var.keys():
-        dropdown_options.append(
-            {'label': key, 'value': key}
-        )
+
 
     C_L, C_D, C_M = calculer_coefficients()
 
@@ -382,9 +385,22 @@ def load_results(load_button):
     else:
         coeff_txt = f"Please load results."
 
-    airfoil_len = 2*x.shape[1]
-    airfoil_x = x[0, :airfoil_len+1]
-    airfoil_y = y[0,:airfoil_len+1]
+    airfoil_len = x.shape[1]
+    airfoil_x = x[0, :airfoil_len]
+    airfoil_y = y[0, :airfoil_len]
+
+    rho_inf = rho[-1, airfoil_len-1]
+    p_inf = pressure[-1, airfoil_len-1]
+    v_inf = np.sqrt(u[-1, airfoil_len-1]**2 + v[-1, airfoil_len-1]**2)
+    cp = (pressure[0, :airfoil_len-1] - p_inf)/(0.5*rho_inf*v_inf**2)
+
+    interp_var["CP"] = cp
+
+
+    for key in interp_var.keys():
+        dropdown_options.append(
+            {'label': key, 'value': key}
+        )
 
     return coeff_txt, dropdown_options, "Density"
 
@@ -451,7 +467,15 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
         pass
 
 
-    if selected_graph is not None:
+    if selected_graph == "CP":
+        fig.add_trace(go.Scatter(x=airfoil_x, y=interp_var[selected_graph], mode="markers", name="CP",
+                                 marker=dict(
+                                     symbol='x',
+                                     color="red"),
+                                 zorder=10))
+
+
+    elif selected_graph is not None:
         fig.add_trace(go.Contour(x=grid_x,
                                  y=grid_y,
                                  z=interp_var[selected_graph],
@@ -459,6 +483,7 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
                                  # line_smoothing=0.85,
                                  contours_coloring='heatmap',
                                  colorscale='Viridis',
+                                 name=selected_graph,
                                  ),
                       )
 
@@ -466,7 +491,8 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
     fig.add_trace(go.Scatter(x=airfoil_x, y=airfoil_y,
                              fill='toself',
                              fillcolor='white',
-                             mode='none'))
+                             mode='none',
+                             name='Airfoil',))
 
     fig.update_layout(
         height=800,
@@ -480,6 +506,7 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
         yaxis_range=[-0.6, 0.6],
         yaxis_scaleanchor="x",
         dragmode="pan",
+        showlegend=False,
     )
 
     return fig

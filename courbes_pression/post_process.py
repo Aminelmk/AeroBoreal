@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from FVM import conservative_variable_from_W, cell
-from read_PLOT3D import read_PLOT3D_mesh, read_plot3d_2d
+from courbes_pression.FVM import conservative_variable_from_W, cell
+from courbes_pression.read_PLOT3D import read_PLOT3D_mesh, read_plot3d_2d
 #from metrics_functions import load_checkpoint_cpp, compute_L2_norm
 
 def conservative_variable_from_W(W, gamma=1.4):

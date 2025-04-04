@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
-from post_process import *
+from courbes_pression.post_process import *
 
 
 

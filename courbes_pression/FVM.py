@@ -1,6 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot as plt
-from read_PLOT3D import read_PLOT3D_mesh, write_plot3d_2d, cell_to_vertex_centered_airfoil, cell_dummy_to_vertex_centered_airfoil
+from courbes_pression.read_PLOT3D import read_PLOT3D_mesh, write_plot3d_2d, cell_to_vertex_centered_airfoil, cell_dummy_to_vertex_centered_airfoil
 #from metrics_functions import compute_L2_norm, update_subplot, save_checkpoint, load_checkpoint
 
 def conservative_variable_from_W(W, gamma=1.4):

@@ -53,7 +53,7 @@ def calculCp(y):
     
     # Étape 1
     inputs = []
-    with open("../SOLVEUR_COUPLE/input_main.txt", "r", encoding="utf-8") as fichier:
+    with open("SOLVEUR_COUPLE/input_main.txt", "r", encoding="utf-8") as fichier:
         for ligne in fichier:
             inputs.append(ligne)
         M = float(inputs[0].split()[-1])
@@ -71,18 +71,23 @@ def calculCp(y):
     
     # Étape 2
     it_max = []
-    for filename in os.listdir("../SOLVEUR_COUPLE/temp"):  
+    for filename in os.listdir("temp"):  
         it_max.append(filename.split("_")[1])
     nx = int(filename.split("_")[3])
     ny = int(filename.split("_")[5])
     it_max = int(max(it_max))
-    nomFichier = f"../SOLVEUR_COUPLE/temp/output_{it_max}_nx_{nx}_ny_{ny}_Cl.csv"
+    nomFichier = f"temp/output_{it_max}_nx_{nx}_ny_{ny}_Cl.csv"
     
     df = pd.read_csv(nomFichier, encoding="utf-8")
-    y_alpha = df["y"].values[0:ny+1]
+    x_point = df["x"].values[:]
+    y_point = df["y"].values[:]
+    sweep = abs(np.rad2deg(np.atan((x_point[int(ny/2)] - x_point[ny])/(y_point[ny] - y_point[int(ny/2)]))))
+    
+    
+
     y_moy = np.zeros(ny)
     for i in range(ny):
-        y_moy[i] = (y_alpha[i] + y_alpha[i+1])/2
+        y_moy[i] = (y_point[i] + y_point[i+1])/2
     alpha_e = df["alpha_e"].values[0:ny]
     
     coef_alpha,indices_alpha = coefPond(y,y_moy)
@@ -93,12 +98,13 @@ def calculCp(y):
     
     
     # Étape 3
+    M *= np.cos(np.deg2rad(sweep))
     Mach = []
     coef_M = []
     indices_M = []
     for i in range(len(y0)):
         Mach.append([])
-        for filename in os.listdir(f"../output_Euler/output_files_{profil[i]}"):
+        for filename in os.listdir(f"output_Euler/output_files_{profil[i]}"):
             Mach[i].append(filename.split("_")[2])
         
         Mach[i] = list(dict.fromkeys(Mach[i]))
@@ -108,7 +114,7 @@ def calculCp(y):
         coef_M.append(coef_tem)
         indices_M.append(indice_tem)
     
-    
+
     
     # Étape 4
     cp = []
@@ -122,32 +128,32 @@ def calculCp(y):
             alpha2 = []
             Mach_min = Mach[i_prof][int(indices_M[i_prof][0,0])]
             Mach_max = Mach[i_prof][int(indices_M[i_prof][1,0])]
-            for filename in os.listdir(f"../output_Euler/output_files_{profil[i_prof]}"):
+            for filename in os.listdir(f"output_Euler/output_files_{profil[i_prof]}"):
                 if float(filename.split("_")[2]) == Mach_min:
                     alpha1.append(float(filename.split("_")[4]))
                 elif float(filename.split("_")[2]) == Mach_max:
                     alpha2.append(float(filename.split("_")[4]))
             alpha1.sort()
             alpha2.sort()
-            
+
             coef_alpha1,indices_alpha1 = coefPond([alpha[i]],alpha1)
             coef_alpha2,indices_alpha2 = coefPond([alpha[i]],alpha2)
             alpha1_min = alpha1[int(indices_alpha1[0,0])]
             alpha1_max = alpha1[int(indices_alpha1[1,0])]
-            alpha2_min = alpha2[int(indices_alpha1[0,0])]
-            alpha2_max = alpha2[int(indices_alpha1[1,0])]
+            alpha2_min = alpha2[int(indices_alpha2[0,0])]
+            alpha2_max = alpha2[int(indices_alpha2[1,0])]
             
             
             
-            x_coord,y_coord = read_PLOT3D_mesh(f"../mesh/{profil[i_prof]}")
+            x_coord,y_coord = read_PLOT3D_mesh(f"mesh/{profil[i_prof]}")
             x_prof.append(x_coord[0])
-            _,_,_,_,_,_,q_1min = read_plot3d_2d(f"../output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_min:.2f}_alpha_{alpha1_min:.2f}_mesh_{profil[i_prof]}.q")
+            _,_,_,_,_,_,q_1min = read_plot3d_2d(f"output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_min:.2f}_alpha_{alpha1_min:.2f}_mesh_{profil[i_prof]}.q")
             cp_1min = compute_coeff(x_coord, y_coord, q_1min, Mach_min, alpha1_min, T_inf, p_inf)
-            _,_,_,_,_,_,q_1max = read_plot3d_2d(f"../output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_min:.2f}_alpha_{alpha1_max:.2f}_mesh_{profil[i_prof]}.q")
+            _,_,_,_,_,_,q_1max = read_plot3d_2d(f"output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_min:.2f}_alpha_{alpha1_max:.2f}_mesh_{profil[i_prof]}.q")
             cp_1max = compute_coeff(x_coord, y_coord, q_1max, Mach_min, alpha1_max, T_inf, p_inf)
-            _,_,_,_,_,_,q_2min = read_plot3d_2d(f"../output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_max:.2f}_alpha_{alpha2_min:.2f}_mesh_{profil[i_prof]}.q")
+            _,_,_,_,_,_,q_2min = read_plot3d_2d(f"output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_max:.2f}_alpha_{alpha2_min:.2f}_mesh_{profil[i_prof]}.q")
             cp_2min = compute_coeff(x_coord, y_coord, q_2min, Mach_max, alpha2_min, T_inf, p_inf)
-            _,_,_,_,_,_,q_2max = read_plot3d_2d(f"../output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_max:.2f}_alpha_{alpha2_max:.2f}_mesh_{profil[i_prof]}.q")
+            _,_,_,_,_,_,q_2max = read_plot3d_2d(f"output_Euler/output_files_{profil[i_prof]}/output_Mach_{Mach_max:.2f}_alpha_{alpha2_max:.2f}_mesh_{profil[i_prof]}.q")
             cp_2max = compute_coeff(x_coord, y_coord, q_2max, Mach_max, alpha2_max, T_inf, p_inf)
             
             cp_prof.append(coef_M[i_prof][0,0]*(coef_alpha1[0,0]*cp_1min + coef_alpha1[1,0]*cp_1max) + coef_M[i_prof][1,0]*(coef_alpha2[0,0]*cp_2min + coef_alpha2[1,0]*cp_2max))
@@ -176,7 +182,13 @@ ax = fig.add_subplot(111, projection='3d')
 for i in range(len(y)):
     ax.plot(x[i],y[i]*np.ones(len(x[i])),cp[i])
 ax.invert_zaxis()
-    
+
+# ax.set_xlabel('x')
+# ax.set_ylabel('y') 
+# ax.set_zlabel('Cp')
+# ax.set_title('Cp en fonction de x et y')
+# plt.grid()
+plt.show()
     
 
 

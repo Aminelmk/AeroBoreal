@@ -535,11 +535,12 @@ def update_plot(wing_type, scalar_name, show_panels, camera_state):
     if scalar_name=='cp2d':
         fig = fig_cp_curve()
         fig.update_traces(line=dict(width=5))
-        z_min = min(fig.data[0].z)  # On prend les valeurs de l'axe z du premier trace
-        z_max = max(fig.data[0].z)
+        z_min = min(fig.data[0].z-0.5)  # On prend les valeurs de l'axe z du premier trace
+        z_max = max(fig.data[0].z+0.5)
         fig.update_layout(
         scene=dict(
-            aspectratio=dict(x=0, y=10, z=0),
+            aspectmode="manual",
+            aspectratio=dict(x=2, y=4, z=1.5),
             zaxis=dict(
                 range=[z_max, z_min]  # Inversez les valeurs ici
             )
@@ -556,7 +557,7 @@ def update_plot(wing_type, scalar_name, show_panels, camera_state):
 def display_clicked_panel_info(click_data):
     if click_data is None:
         return html.Div(
-            "Click on a panel to see its value.",
+            "Click on a node to see its value.",
             style={
                 "font-size": "16px",
                 "color": "gray",

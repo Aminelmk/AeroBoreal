@@ -35,33 +35,6 @@ html.Div([
     html.Div([
         html.H3("Explore the Software Features", 
                 style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
-        
-        dbc.Row([
-            dbc.Col(
-                dbc.Button("Mesh 2D", color="primary", href="/page-mesh2d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
-                width=6
-            ),
-            dbc.Col(
-                dbc.Button("Mesh 3D", color="primary", href="/page-mesh3d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
-                width=6
-            ),
-        ], style={"marginBottom": "30px"}),
-
-        dbc.Row([
-            dbc.Col(
-                dbc.Button("Euler 2D", color="primary", href="/page-euler2d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
-                width=6
-            ),
-            dbc.Col(
-                dbc.Button("VLM-Structure 3D", color="primary", href="/pages-vlmstructure3D", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
-                width=6
-            ),
-        ], style={"marginBottom": "30px"}),
-    ], style={"padding": "20px"}),
-
-    html.Div([
-        html.H3("Page Descriptions", 
-                style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
 
   
         dbc.Row([
@@ -70,15 +43,34 @@ html.Div([
                 html.P(
                     "Create and visualize 2D meshes for aerodynamic simulations. Define geometry and grid resolution to generate meshes used for fluid dynamics analysis.",
                     style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                ),
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button("Mesh 2D", color="primary", href="/page-mesh2d", size="lg", className="w-100",
+                            style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                    width=6
                 )
+            ], justify="center")
+
             ], width=6),
+            
+            
             dbc.Col([
                 html.H4("Mesh 3D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
                 html.P(
                     "Generate and visualize 3D meshes for structural and fluid-structure simulations. Supports complex geometries, enhancing the accuracy of your models.",
                     style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
+                ),
+
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button("Mesh 3D", color="primary", href="/page-mesh3d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                    width=6
                 )
+            ], justify="center"),
             ], width=6),
+
+            
         ], style={"marginBottom": "30px"}),
 
 
@@ -88,16 +80,78 @@ html.Div([
                 html.P(
                     "Perform aerodynamic simulations for 2D airfoils using the Euler solver. Set Mach number, angle of attack, and other parameters to analyze airfoil performance.",
                     style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
-                )
-            ], width=6),
+                ),
+
+                dbc.Row([
+                dbc.Col(
+                    dbc.Button("Euler 2D", color="primary", href="/page-euler2d", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                    width=6
+                            )
+                        ], justify="center"),
+                        ], width=6),
+
             dbc.Col([
                 html.H4("VLM-Structure 3D", style={"fontSize": "24px", "fontWeight": "bold", "color": "#2980b9"}),
                 html.P(
                     "Conduct aero-structural simulations for complex 3D configurations like wings and aircraft. This page integrates both fluid and structural models for comprehensive analysis.",
                     style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}
-                )
-            ], width=6),
+                ),
+
+                dbc.Row([
+                dbc.Col(
+                    dbc.Button("VLM-Structure 3D", color="primary", href="/pages-vlmstructure3D", size="lg", className="w-100", style={"marginBottom": "20px", "fontSize": "20px", "padding": "20px"}),
+                    width=6
+                            )
+                        ], justify="center"),
+                        ], width=6),
+
         ], style={"marginBottom": "30px"}),
+
+    html.Br(),
+html.Div([
+    html.H3("Development Contributors", 
+            style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
+
+    dbc.Row([
+        dbc.Col([
+            html.P("Youcef Benouadah", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Nadir Bettahar", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Oihan Cordelier", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Cléo Delêtre", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Vincent Dubé", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Ouèpiya Chris David Fogue", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Cédric Gagné", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+        ], width=3, style={"textAlign": "center"}),  # Centrer le texte dans cette colonne
+
+        dbc.Col([
+            html.P("Rayan Hamza", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Shajeevan Kanapathippillai", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Amine Lamkinsi", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Marina Latendresse", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Hieu Nhan Tran", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Jacob Tremblay", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+            html.P("Brandon Velasquez", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+        ], width=3, style={"textAlign": "center"}),  # Centrer le texte dans cette colonne
+    ], justify="center", style={"marginBottom": "30px", "textAlign": "center"}),  # Centrer les éléments dans le Row
+], style={"padding": "20px", "textAlign": "center"}),
+
+html.Div([
+    html.H3("Development Supervisors", 
+            style={"textAlign": "center", "fontSize": "30px", "fontWeight": "bold", "color": "#34495e", "marginBottom": "30px"}),
+
+    dbc.Row([
+        dbc.Col([
+            html.P("Éric Laurendeau, PhD", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+        ], width=3, style={"textAlign": "center"}),  # Centrer le texte dans cette colonne
+
+        dbc.Col([
+            html.P("Matthieu Parenteau, PhD", style={"fontSize": "18px", "color": "#7f8c8d", "marginBottom": "20px"}),
+        ], width=3, style={"textAlign": "center"}),  # Centrer le texte dans cette colonne
+    ], justify="center", style={"marginBottom": "30px", "textAlign": "center"}),  # Centrer les éléments dans le Row
+], style={"padding": "20px", "textAlign": "center"})
+
+
+
     ], style={"padding": "20px"})
 ])
 

@@ -36,16 +36,22 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Home", href="/")),
         dbc.DropdownMenu(
             children=[
-                dbc.DropdownMenuItem("More pages", header=True),
                 dbc.DropdownMenuItem("Mesh 2D", href="/page-mesh2d"),
-                dbc.DropdownMenuItem("Mesh 3D", href="/page-mesh3d"),
                 dbc.DropdownMenuItem("Euler 2D", href="/page-euler2d"),
-                dbc.DropdownMenuItem("VLM-Structure 3D", href="/pages-vlmstructure3D"),
-                dbc.DropdownMenuItem("VLM-Pression", href="/pages-pressionVLM"),
             ],
             nav=True,
             in_navbar=True,
-            label="More",
+            label="2D",
+        ),
+        dbc.DropdownMenu(
+            children=[
+                dbc.DropdownMenuItem("Mesh 3D", href="/page-mesh3d"),
+                dbc.DropdownMenuItem("NL-VLM-Structure 3D", href="/pages-vlmstructure3D"),
+                dbc.DropdownMenuItem("Results 3D", href="/pages-pressionVLM"),
+            ],
+            nav=True,
+            in_navbar=True,
+            label="3D",
         ),
     ],
     brand="Logiciel Aéro-élastique",

@@ -54,8 +54,9 @@ navbar = dbc.NavbarSimple(
             label="3D",
         ),
     ],
-    brand="Logiciel Aéro-élastique",
+    brand="AeroBoréal",
     brand_href="#",
+    brand_style={"color": "black"},
     color="primary",
     dark=False,
 )

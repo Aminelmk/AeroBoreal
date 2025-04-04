@@ -20,7 +20,6 @@ html.Div([
                     "fontSize": "48px", 
                     "fontWeight": "bold", 
                     "color": "black",  
-                    "textShadow": "3px 3px 6px rgba(0, 0, 0, 0.3)",  
                     "padding": "20px"
                 }),
         html.P(

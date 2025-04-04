@@ -100,7 +100,7 @@ def write_vtu_with_data(file_name, x, y, z, data):
 if __name__ == "__main__":
     # Search all the files in the temp directory
     for filename in os.listdir("temp"):
-        if filename.endswith(".csv") and "Cl" not in filename:
+        if filename.endswith(".csv") and "Cl" not in filename and "displacement" not in filename:
             data = pd.read_csv("temp/" + filename)
             nx = int(re.search(r"nx_(\d+)", filename).group(1))
             ny = int(re.search(r"ny_(\d+)", filename).group(1))

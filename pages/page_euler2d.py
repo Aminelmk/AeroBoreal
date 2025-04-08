@@ -7,7 +7,30 @@ import numpy as np
 
 from euler2d import euler_solver
 
+import io
+import subprocess
+import threading
+import queue
+import sys
+from contextlib import redirect_stdout
+import re
+
+output_queue = queue.Queue()
+
+class StreamToQueue(io.TextIOBase):
+    def __init__(self, queue):
+        self.queue = queue
+    def write(self, msg):
+        self.queue.put(msg)
+    def flush(self):
+        pass
+
+
 dash.register_page(__name__, path="/page-euler2d")
+
+
+simulation_process = None
+
 
 # ======================================================================
 # Data Processing Functions
@@ -120,12 +143,12 @@ layout = html.Div([
         html.Br(),
         html.Div([
             html.Label("Mach Number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-            dcc.Input(id="Mach", type="number", min=0, max=10, value=0.5, style={"flex": "1"}),
+            dcc.Input(id="Mach", type="number", min=0.3, max=1.5, value=0.5, style={"flex": "1"}),
         ], className="row d-flex align-items-center mt-2"),
 
         html.Div([
             html.Label("Angle of Attack (α): ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-            dcc.Input(id="alpha", type="number", min=0, value=5.0, style={"flex": "1"}),
+            dcc.Input(id="alpha", type="number", min=0, value=0.0, style={"flex": "1"}),
         ], className="row d-flex align-items-center mt-2"),
 
         html.Div([
@@ -153,7 +176,7 @@ layout = html.Div([
 
         html.Div([
             html.Label("Max Iterations: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-            dcc.Input(id="it_max", type="number", value=1000, style={"flex": "1"}),
+            dcc.Input(id="it_max", type="number", value=10_000, style={"flex": "1"}),
         ], className="row d-flex align-items-center mt-2"),
 
         html.Div([
@@ -221,14 +244,31 @@ layout = html.Div([
         dbc.Col(
             dbc.Button("Run Simulation", id='run_solver', color="primary", className="mt-2"),
             width="auto"
-        )
+        ),
+
+        dbc.Col(
+            dbc.Button("Stop simulation", id='stop_solver', color="danger", disabled=True, className="mt-2", ),
+            width="auto"
+        ),
+
     ], justify="center"),
 
-    dcc.Loading(
-        id="solver-loading",
-        type="default",
-        children=html.Div(id='solver-status', className="mt-3")
-    ),
+    html.Div(id="solver-status", className="mt-3"),
+
+    # ======= Residual data =======
+
+    dcc.Store(id="convergence-store", data=[]),
+    dcc.Graph(id="live-graph"),
+    dcc.Interval(id="log-poll", interval=1000, n_intervals=0),
+
+    html.Div("Counter: ", id="counter"),
+
+
+    # dcc.Loading(
+    #     id="solver-loading",
+    #     type="default",
+    #     children=html.Div(id='solver-status', className="mt-3")
+    # ),
 
     html.Div(id='visualization-redirect', style={'display': 'none'}),
     ])
@@ -264,61 +304,16 @@ def save_uploaded_mesh(contents, filename):
 
     return dbc.Alert(f"Mesh '{filename}' uploaded successfully!", color="success"), filename
 
- #########FIN CHANGEMENT##################       
-# ======================================================================
-# Visualization Page
-# ======================================================================
-
-viz_layout = dbc.Container([
-    html.H1("Simulation Results", className="mb-4 text-center"),
-
-    dbc.Row(
-        dbc.Col(
-            dcc.Dropdown(
-                id='graph-selector',
-                options=[],
-                value='Density',
-                clearable=False,
-                className="mb-4",
-                style={'minWidth': '300px'}
-            ),
-            width=8,
-            className="text-center"
-        ),
-        justify="center"
-    ),
-
-    dbc.Row(
-        dbc.Col(
-            dcc.Graph(id='result-plot', style={'height': '70vh', 'width': '70%', 'margin': 'auto'}),
-            width=100,
-            className="d-flex justify-content-center"
-        )
-    ),
-
-    dbc.Row(
-        dbc.Col(
-            dbc.Button(
-                "Back to Configuration",
-                href="/",
-                color="secondary",
-                className="mt-4"
-            ),
-            width="auto"
-        ),
-        justify="center",
-        className="mb-4"
-    )
-], fluid=True, style={'height': '100vh'})
-
 
 # ======================================================================
 # Callbacks
 # ======================================================================
 
 @dash.callback(
-    [Output('solver-status', 'children'),
-     Output('visualization-redirect', 'children')],
+    [Output('solver-status', 'children', allow_duplicate=True),
+     Output('visualization-redirect', 'children'),
+     Output("convergence-store", "data", allow_duplicate=True),
+     Output("stop_solver", "disabled", allow_duplicate=True),],
     [Input('run_solver', 'n_clicks')],
     [State('Mach', 'value'),
      State('alpha', 'value'),
@@ -330,13 +325,13 @@ viz_layout = dbc.Container([
      State('k2', 'value'),
      State('k4', 'value'),
      State('it_max', 'value')],
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def run_simulation(n_clicks, Mach, alpha, CFL_number, p_inf, T_inf,
                    multigrid, residual_smoothing, k2, k4, it_max):
      #########DEBUT CHANGEMENT##################      
     if not n_clicks:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
 
     # Choix du maillage : uploadé ou par défaut
     uploaded_mesh_path = "temp/user_mesh.xyz"
@@ -356,19 +351,128 @@ residual_smoothing = {residual_smoothing}
 k2 = {k2}
 k4 = {k4}
 it_max = {it_max}
-output_file = test.q
+output_file = temp/results.q
 checkpoint_file = checkpoint_test.txt"""
 
-    with open("input.txt", "w") as f:
+    with open("temp/input.txt", "w") as f:
         f.write(input_content)
 
-    # Exécution du solveur
-    try:
-        euler_solver.solve("input.txt")
-        status = dbc.Alert("Simulation completed successfully!", color="success")
-        redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
-    except Exception as e:
-        status = dbc.Alert(f" Error: {str(e)}", color="danger")
-        redirect = dash.no_update
+    threading.Thread(target=run_solver_with_capture, daemon=True).start()
 
-    return status, redirect
+    status = dbc.Alert("Simulation started!", color="success")
+    redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
+
+
+
+    # Exécution du solveur
+    # try:
+    #     euler_solver.solve("input.txt")
+    #     status = dbc.Alert("Simulation completed successfully!", color="success")
+    #     redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
+    # except Exception as e:
+    #     status = dbc.Alert(f" Error: {str(e)}", color="danger")
+    #     redirect = dash.no_update
+
+    return status, dash.no_update, [], False
+
+def run_solver_with_capture():
+
+    global simulation_process
+
+    simulation_process = subprocess.Popen(
+        ["python", "euler2d/launch_euler2d.py"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    for line in simulation_process.stdout:
+        output_queue.put(line)
+    output_queue.put("__DONE__")
+
+
+@dash.callback(
+    [Output("convergence-store", "data"),
+    Output("live-graph", "figure"),
+    Output("stop_solver", "disabled", allow_duplicate=True)],
+    Input("log-poll", "n_intervals"),
+    State("convergence-store", "data"),
+    prevent_initial_call=True,
+)
+def update_convergence_graph(n, data):
+
+    disable_stop_button = dash.no_update
+
+
+    if data is None:
+        data = []
+
+    while not output_queue.empty():
+        line = output_queue.get()
+
+        if line.startswith("__ERROR__"):
+            print("ERROR in simulation output")
+            continue
+
+        if line == "__DONE__":
+            print("Simulation finished streaming")
+            disable_stop_button = True
+            break
+        else:
+            parsed = parse_line(line)
+            if parsed:
+                data.append(parsed)
+
+    # Plotting the convergence of residuals
+    fig = go.Figure()
+    if data:
+        fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[np.log10(d["res1"]) for d in data],
+                                 mode="lines", name="rho"))
+
+        # fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[d["res2"] for d in data],
+        #                          mode="lines+markers", name="rho_u"))
+        # fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[d["res3"] for d in data],
+        #                          mode="lines+markers", name="rho_v"))
+        # fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[d["res4"] for d in data],
+        #                          mode="lines+markers", name="rho_E"))
+
+    fig.update_layout(title="Convergence History",
+                      xaxis_title="Iteration",
+                      yaxis_title="Log10(L2 norm of RHO)",
+                      legend_title="Variable")
+
+    # fig.update_yaxes(title_text="Residual", type="log")
+
+    return data, fig, disable_stop_button
+
+def parse_line(line):
+    pattern = r"Iteration:\s*(\d+)\s*:\s*L2_norms:\s*([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s*C_l:\s*([\d.eE+-]+)\s*C_d:\s*([\d.eE+-]+)\s*C_m:\s*([\d.eE+-]+)"
+    match = re.search(pattern, line)
+    if match:
+        return {
+            "iter": int(match.group(1)),
+            "res1": float(match.group(2)),
+            "res2": float(match.group(3)),
+            "res3": float(match.group(4)),
+            "res4": float(match.group(5)),
+            "C_l": float(match.group(6)),
+            "C_d": float(match.group(7)),
+            "C_m": float(match.group(8)),
+        }
+    return None
+
+@dash.callback(
+    [Output("solver-status", "children"),
+    Output("stop_solver", "disabled", allow_duplicate=True)],
+    Input("stop_solver", "n_clicks"),
+    prevent_initial_call=True,
+)
+def stop_simulation(n_clicks):
+    global simulation_process
+
+    if simulation_process and simulation_process.poll() is None:
+        simulation_process.terminate()  # or .kill() if needed
+        return dbc.Alert("Simulation stopped.", color="warning"), True
+    else:
+        return dbc.Alert("No running simulation to stop.", color="secondary"), True

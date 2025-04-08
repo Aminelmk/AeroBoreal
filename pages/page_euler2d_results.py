@@ -213,7 +213,7 @@ layout = dbc.Container([
                                   disabled=True,
                         className="me-2"),
                         width="auto"),
-                dbc.Col(dcc.Input(id='result', type='text', value="/test.q", readOnly=True,
+                dbc.Col(dcc.Input(id='result', type='text', value="temp/results.q", readOnly=True,
                                   disabled=True,
                                   className="me-2"), width="auto"),
                 dbc.Col(dbc.Button("Load results", id="load-results", n_clicks=0), width="auto"),
@@ -288,7 +288,7 @@ layout = dbc.Container([
             dbc.Col(
                 dbc.Button(
                     "Back to Configuration",
-                    href="/",
+                    href="/page-euler2d",
                     color="secondary",
                     className="mt-4"
                 ),
@@ -343,7 +343,7 @@ def load_results(load_button):
 
     mesh_path = maillage_depuis_input()
     nx, ny, x, y = parse_mesh(mesh_path)
-    rho, rho_u, rho_v, rho_E = parse_test_q("test.q", nx, ny)
+    rho, rho_u, rho_v, rho_E = parse_test_q("temp/results.q", nx, ny)
 
     gamma = 1.4
     u = rho_u / rho
@@ -433,7 +433,7 @@ def calculer_coefficients():
     try:
         mesh_path = maillage_depuis_input()
         x, y = read_PLOT3D_mesh(mesh_path)
-        _, _, mach, alpha, _, _, q_vertex = read_plot3d_2d("test.q")
+        _, _, mach, alpha, _, _, q_vertex = read_plot3d_2d("temp/results.q")
         _, C_L, C_D, C_M = compute_coeff(x, y, q_vertex, mach, alpha, T_inf=300, p_inf=1e5)
         return round(C_L, 4), round(C_D, 4), round(C_M, 4)
     except Exception as e:
@@ -451,7 +451,8 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
 
     global grid_x, grid_y, interp_var, airfoil_x, airfoil_y
 
-    fig = go.Figure()
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    # fig = go.Figure()
 
     if show_streamlines:
 
@@ -468,11 +469,17 @@ def update_fig(selected_graph, show_mesh, show_streamlines):
 
 
     if selected_graph == "CP":
-        fig.add_trace(go.Scatter(x=airfoil_x, y=interp_var[selected_graph], mode="markers", name="CP",
+        fig.add_trace(
+            go.Scatter(x=airfoil_x, y=interp_var[selected_graph], mode="markers", name="CP",
                                  marker=dict(
                                      symbol='x',
                                      color="red"),
-                                 zorder=10))
+                                 zorder=10),
+            secondary_y=True,
+
+        )
+
+        fig.update_yaxes(showgrid=False, zeroline=False, autorange='reversed', secondary_y=True)
 
 
     elif selected_graph is not None:

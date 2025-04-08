@@ -13,6 +13,7 @@ import os
 from mesh2d.naca4digits import Naca4Digits
 from mesh2d.cst_class import CstAirfoil
 from mesh2d.elliptic_grid import PoissonMesh
+from mesh2d.conformal_mapping import ConformalMapping
 from mesh2d.bspline_wrapper import BSplineWrapper
 
 # Converted CPP
@@ -156,7 +157,7 @@ def display_airfoil(airfoil, points=None, mesh=None, bspline_data=None, bspline_
 
     if mesh is not None:
         x_trace, z_trace = single_trace(mesh)
-        fig.add_trace(go.Scatter(x=x_trace, y=z_trace, name="Grid", mode="lines", line=dict(color="black")))
+        fig.add_trace(go.Scatter(x=x_trace, y=z_trace, name="Grid", mode="lines", line=dict(color="black", width=1)))
 
     fig.update_layout(title="Airfoil Display", xaxis_title="x/c", yaxis_title="y/c",
                       xaxis_range=[-0.1, 1.1], yaxis_range=[-0.4, 0.4], yaxis_scaleanchor="x",
@@ -218,7 +219,7 @@ layout = html.Div([
                 )
             ], width=8),
             dbc.Col([
-                dbc.Accordion([
+                dbc.Accordion(id="mesh-accordion", children=[
                     dbc.AccordionItem([
 
                         html.Div([
@@ -326,42 +327,59 @@ layout = html.Div([
 
                     dbc.AccordionItem([
 
+                        html.Div([
+                            html.Label("Mesh type: ", className="col-4",
+                                       style={"text-align": "left", "white-space": "nowrap"}),
+                            dcc.Dropdown(["Conformal mapping", "Elliptic"], "Elliptic", id="mesh-type-dropdown", style={"flex": "1"}),
+                        ], className="row d-flex align-items-center mt-2"),
+
                         html.Br(),
                         html.H6("Mesh caracteristics"),
 
                         html.Div([
-                            html.Label("Cell number: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
+                            html.Label("Cell number: ", className="col-4",
+                                       style={"text-align": "left", "white-space": "nowrap"}),
                             dcc.Dropdown([16, 32, 64, 128, 256], 32, id="n-cell-slider", style={"flex": "1"}),
                         ], className="row d-flex align-items-center mt-2"),
 
+                        html.Div(id="elliptic-mesh-controls", children=[
 
-                        html.Div([
-                            html.Label("Farfield radius: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-                            dcc.Input(id="farfield-radius", type="number", min=10, max=1000, value=100, style={"flex": "1"}),
-                        ], className="row d-flex align-items-center mt-2"),
+                            html.Div([
+                                html.Label("Farfield radius: ", className="col-6",
+                                           style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="farfield-radius", type="number", min=10, max=1000, value=100,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
+                            html.Br(),
+                            html.H6("Solver parameters"),
 
-                        html.Br(),
-                        html.H6("Solver parameters"),
+                            html.Div([
+                                html.Label("Max iterations: ", className="col-6",
+                                           style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="mesh-max-iter", type="number", min=1, max=1e6, value=1e4,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
 
-                        html.Div([
-                            html.Label("Max iterations: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-                            dcc.Input(id="mesh-max-iter", type="number", min=1, max=1e6, value=1e4,
-                                      style={"flex": "1"}),
-                        ], className="row d-flex align-items-center mt-2"),
+                            html.Div([
+                                html.Label("Tolerance: ", className="col-6",
+                                           style={"text-align": "left", "white-space": "nowrap"}),
+                                dcc.Input(id="mesh-tolerance", type="number", min=1e-8, max=1e-3, value=1e-4,
+                                          style={"flex": "1"}),
+                            ], className="row d-flex align-items-center mt-2"),
+                        ]),
 
-                        html.Div([
-                            html.Label("Tolerance: ", className="col-6", style={"text-align": "left", "white-space": "nowrap"}),
-                            dcc.Input(id="mesh-tolerance", type="number", min=1e-8, max=1e-3, value=1e-4,
-                                      style={"flex": "1"}),
-                        ], className="row d-flex align-items-center mt-2"),
+                        html.Div(id="conformal-mesh-controls", children = [
+
+                        ]),
+
 
                         html.Div([
                             dbc.Button("Generate mesh", id="button-generate-mesh", n_clicks=0),
                             dbc.Button("Download mesh", id="button-download-mesh", className="ms-2")
                         ], className="d-flex align-items-center mt-2"),
                         dcc.Download(id="download-mesh")
-                    ], title="Elliptic Mesh")
+                    ], title="Mesh Generation")
                 ])
             ])
         ])
@@ -380,6 +398,17 @@ def toggle_visibility(method):
         {"display": "block"} if method == "NACA" else {"display": "none"},
         {"display": "block"} if method == "CST" else {"display": "none"},
         {"display": "block"} if method == "B-Spline" else {"display": "none"}
+    )
+
+@dash.callback(
+    [Output("elliptic-mesh-controls", "style"),
+     Output("conformal-mesh-controls", "style"),],
+    Input("mesh-type-dropdown", "value")
+)
+def toggle_mesh_controls(mesh_type):
+    return (
+        {"display": "block"} if mesh_type == "Elliptic" else {"display": "none"},
+        {"display": "block"} if mesh_type == "Conformal mapping" else {"display": "none"},
     )
 
 # @dash.callback(
@@ -438,6 +467,7 @@ def toggle_visibility(method):
         Input("mesh-dropdown", "value"),
         Input({"type": "A_upper", "index": dash.ALL}, "value"),
         Input({"type": "A_lower", "index": dash.ALL}, "value"),
+        Input("mesh-type-dropdown", "value"),
     ],
     [
         State("upload-bspline", "contents"),
@@ -453,9 +483,9 @@ def toggle_visibility(method):
     prevent_initial_call=True
 )
 def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber, camber_pos, thickness, naca_sharp_te, method,
-               A_upper_values, A_lower_values,
+               A_upper_values, A_lower_values, mesh_type,
                bspline_content, bspline_knot, cst_content, n_order,
-               n_cell, bspline_degree, ff_radius, mesh_max_iter, mesh_tol,):
+               n_cell, bspline_degree, ff_radius, mesh_max_iter, mesh_tol):
         
     # global airfoil, mesh, points_data, bspline_data, bspline_input
     global airfoil, mesh, points_data, bspline_data, bspline_input
@@ -463,29 +493,41 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
 
     if triggered == "button-generate-mesh":
 
-        # n_nodes = 2 ** n_cell + 1
-        # n_xc_nodes = int((2 ** n_cell / 2) + 1)
+        if mesh_type == "Elliptic":
 
-        n_nodes = n_cell + 1
-        n_xc_nodes = int((n_cell / 2) + 1)
+            # n_nodes = 2 ** n_cell + 1
+            # n_xc_nodes = int((2 ** n_cell / 2) + 1)
 
-        beta = np.linspace(0, np.pi, n_xc_nodes)
-        xc = 0.5 * (1 - np.cos(beta))
+            n_nodes = n_cell + 1
+            n_xc_nodes = int((n_cell / 2) + 1)
 
-        if method == "CST":
-            xs, ys = airfoil.get_surface_from_x(xc)
-        elif method == "NACA":
-            xs, ys = airfoil.get_surface_from_x(xc)
-        elif method == "B-Spline":
-            xs, ys = airfoil.get_surface_from_x(xc)
-        else:
-            return display_airfoil(airfoil), ""
+            beta = np.linspace(0, np.pi, n_xc_nodes)
+            xc = 0.5 * (1 - np.cos(beta))
 
-        mesh = PoissonMesh(n_nodes, xs, ys)
-        mesh.ff_radius = ff_radius
-        mesh.init_grid()
-        mesh.grid_relaxation(tol=mesh_tol, max_iter=mesh_max_iter)
-        mesh.write_plot3d("./temp/mesh.xyz")
+            if method == "CST":
+                xs, ys = airfoil.get_surface_from_x(xc)
+            elif method == "NACA":
+                xs, ys = airfoil.get_surface_from_x(xc)
+            elif method == "B-Spline":
+                xs, ys = airfoil.get_surface_from_x(xc)
+            else:
+                return display_airfoil(airfoil), ""
+
+            print(f"mesh max iter = {mesh_max_iter}")
+
+            mesh = PoissonMesh(n_nodes, xs, ys)
+            mesh.ff_radius = ff_radius
+            mesh.init_grid()
+            mesh.grid_relaxation(tol=mesh_tol, max_iter=mesh_max_iter)
+            mesh.write_plot3d("./temp/mesh.xyz")
+
+        if mesh_type == "Conformal mapping":
+            if type(airfoil) is Naca4Digits:
+                if airfoil.symmetric:
+
+                    mesh = ConformalMapping(airfoil)
+                    mesh.generate_mesh(n_cell)
+                    mesh.write_plot3d("./temp/mesh.xyz")
 
         # if method == "B-Spline":
         #     return display_airfoil(None, bspline_data=bspline_data, bspline_init=np.column_stack(bspline_input), mesh=mesh)
@@ -571,18 +613,43 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
     return [display_airfoil(airfoil), ""]
 
 
-
+# TODO: when NACA is changed from cambered to symmetric, the generate button is stil disabled. Correct!
 @dash.callback(
     [Output("naca-sharp-te-warning", "children"),
      Output("button-generate-mesh", "disabled")],
-    Input("naca-sharp-te", "on"),
+    [Input("naca-sharp-te", "on"),
+     Input("mesh-dropdown", "value"),
+     Input("mesh-type-dropdown", "value"),
+     Input("mesh-accordion", "active_item")],
     prevent_initial_call=True,
 )
-def display_naca_sharp_te_warning(sharp_te):
-    if sharp_te:
-        return "", False
-    else:
-        return [html.Br(), dbc.Alert(f"It is not possible to generate a mesh with a blunt trailing edge.", color="warning")], True
+def display_naca_sharp_te_warning(sharp_te, mesh_dropdown, mesh_type_dropdown, accordion):
+
+    global airfoil
+
+    triggered = dash.callback_context.triggered
+
+    sharp_te_alert = ""
+    generate_mesh_disabled = False
+
+
+    if mesh_type_dropdown == "Conformal mapping":
+        if type(airfoil) is Naca4Digits:
+            if not airfoil.symmetric:
+                generate_mesh_disabled = True
+        else:
+            generate_mesh_disabled = True
+
+    if mesh_dropdown == "NACA":
+        if not sharp_te:
+            sharp_te_alert = [html.Br(), dbc.Alert(f"It is not possible to generate a mesh with a blunt trailing edge.", color="warning")]
+            generate_mesh_disabled = True
+
+    return sharp_te_alert, generate_mesh_disabled
+
+
+
+
 
 
 @dash.callback(

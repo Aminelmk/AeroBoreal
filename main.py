@@ -60,6 +60,12 @@ navbar = dbc.NavbarSimple(
     brand_style={"color": "black"},
     color="primary",
     dark=False,
+    className="compact-navbar",
+    # style={
+    #     "padding": "0.0rem 0rem",
+    #     "minHeight": "10px",
+    #     "fontSize": "0.9rem"
+    # },
 )
 
 # App Layout (Navigation + Page Container)

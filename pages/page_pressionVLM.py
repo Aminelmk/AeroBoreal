@@ -427,7 +427,7 @@ layout = html.Div([
 )
 def update_plot(wing_type, scalar_name, show_panels, camera_state):
     # Path to the "temp" folder
-    temp_folder = "../HTML_3D/temp"
+    temp_folder = "temp"
 
     # Check for .vtu files in the "temp" folder
     vtu_files = [f for f in os.listdir(temp_folder) if f.endswith(".vtu")]

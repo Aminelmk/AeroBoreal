@@ -7,6 +7,9 @@ import numpy as np
 
 from euler2d import euler_solver
 
+import os
+import time
+
 import io
 import subprocess
 import threading
@@ -31,6 +34,8 @@ dash.register_page(__name__, path="/page-euler2d")
 
 simulation_process = None
 
+solver_start_time = None
+solver_end_time = None
 
 # ======================================================================
 # Data Processing Functions
@@ -253,15 +258,55 @@ layout = html.Div([
 
     ], justify="center"),
 
-    html.Div(id="solver-status", className="mt-3"),
+
+    html.Div(id="solver-realtime-convergence", hidden=True, children=[
+        html.Hr(),
+        html.Div(id="solver-status", className="mt-3"),
+        html.H5("Convergence history: "),
+        dcc.Graph(id="live-graph"),
+        html.H5("Raw console log: "),
+        dcc.Textarea(id='solver-console', disabled=True, style={'width': '100%', 'height': 200}),
+    ]),
+
+    html.Div(children=[
+        html.Hr(),
+
+        dbc.Row([
+            dbc.Col(
+                dbc.Button(
+                    "Back to Configuration",
+                    href="/page-mesh2d",
+                    color="secondary",
+                    className="mt-4"
+                ),
+                width="auto"
+            ),
+
+            dbc.Col(
+                dbc.Button(
+                    "See results",
+                    href="/page-euler2d-results",
+                    id="button-see-results",
+                    disabled=True,
+                    color="primary",
+                    className="mt-4"
+                ),
+                width="auto"
+            )],
+
+            justify="center",
+            className="mb-4"
+        ),
+    ]),
 
     # ======= Residual data =======
 
     dcc.Store(id="convergence-store", data=[]),
-    dcc.Graph(id="live-graph"),
-    dcc.Interval(id="log-poll", interval=1000, n_intervals=0),
+    dcc.Store(id="console-store", data=[]),
 
-    html.Div("Counter: ", id="counter"),
+    dcc.Interval(id="log-poll", interval=500, disabled=True, n_intervals=0),
+
+    # html.Div("Counter: ", id="counter"),
 
 
     # dcc.Loading(
@@ -313,8 +358,11 @@ def save_uploaded_mesh(contents, filename):
     [Output('solver-status', 'children', allow_duplicate=True),
      Output('visualization-redirect', 'children'),
      Output("convergence-store", "data", allow_duplicate=True),
-     Output("stop_solver", "disabled", allow_duplicate=True),],
-    [Input('run_solver', 'n_clicks')],
+     Output("stop_solver", "disabled", allow_duplicate=True),
+     Output("log-poll", "disabled", allow_duplicate=True),
+     Output("solver-console", "value", allow_duplicate=True),
+     Output("solver-realtime-convergence", "hidden"),],
+    [Input('run_solver', 'n_clicks'),],
     [State('Mach', 'value'),
      State('alpha', 'value'),
      State('CFL_number', 'value'),
@@ -329,6 +377,13 @@ def save_uploaded_mesh(contents, filename):
 )
 def run_simulation(n_clicks, Mach, alpha, CFL_number, p_inf, T_inf,
                    multigrid, residual_smoothing, k2, k4, it_max):
+
+    # Clears the queue for the next simulation
+    with output_queue.mutex:
+        output_queue.queue.clear()
+
+    log_poll = dash.no_update
+
      #########DEBUT CHANGEMENT##################      
     if not n_clicks:
         return dash.no_update, dash.no_update, dash.no_update
@@ -352,7 +407,9 @@ k2 = {k2}
 k4 = {k4}
 it_max = {it_max}
 output_file = temp/results.q
-checkpoint_file = checkpoint_test.txt"""
+checkpoint_file = temp/checkpoint_euler.txt"""
+
+    os.makedirs("temp/", exist_ok=True)
 
     with open("temp/input.txt", "w") as f:
         f.write(input_content)
@@ -362,6 +419,10 @@ checkpoint_file = checkpoint_test.txt"""
     status = dbc.Alert("Simulation started!", color="success")
     redirect = dcc.Location(pathname="/page-euler2d-results", id="redirect")
 
+    global solver_start_time, solver_end_time
+
+    solver_start_time = time.perf_counter()
+    solver_end_time = 0.0
 
 
     # Exécution du solveur
@@ -373,7 +434,12 @@ checkpoint_file = checkpoint_test.txt"""
     #     status = dbc.Alert(f" Error: {str(e)}", color="danger")
     #     redirect = dash.no_update
 
-    return status, dash.no_update, [], False
+    log_poll = False
+
+    convergence_panel_hidden = False
+
+    return status, dash.no_update, [], False, log_poll, "", convergence_panel_hidden
+
 
 def run_solver_with_capture():
 
@@ -391,25 +457,40 @@ def run_solver_with_capture():
         output_queue.put(line)
     output_queue.put("__DONE__")
 
-
 @dash.callback(
     [Output("convergence-store", "data"),
     Output("live-graph", "figure"),
-    Output("stop_solver", "disabled", allow_duplicate=True)],
+    Output("stop_solver", "disabled", allow_duplicate=True),
+    Output("solver-console", "value"),
+     Output("solver-status", "children", allow_duplicate=True),
+     Output("log-poll", "disabled", allow_duplicate=True),
+     Output("button-see-results", "disabled", allow_duplicate=True),],
     Input("log-poll", "n_intervals"),
-    State("convergence-store", "data"),
+    [State("convergence-store", "data"),
+    State("solver-console", "value"),],
     prevent_initial_call=True,
 )
-def update_convergence_graph(n, data):
+def update_convergence_graph(n, data, console_data):
 
     disable_stop_button = dash.no_update
 
+    solver_status = dash.no_update
+
+    log_poll = dash.no_update
+
+    button_see_results = dash.no_update
+
+    global solver_start_time, solver_end_time
 
     if data is None:
         data = []
 
+    if console_data is None:
+        console_data = ""
+
     while not output_queue.empty():
         line = output_queue.get()
+        console_data += f"{line}"
 
         if line.startswith("__ERROR__"):
             print("ERROR in simulation output")
@@ -418,11 +499,18 @@ def update_convergence_graph(n, data):
         if line == "__DONE__":
             print("Simulation finished streaming")
             disable_stop_button = True
+            log_poll = True
+            button_see_results = False
+            solver_end_time = time.perf_counter()
+
+            solver_status = dbc.Alert(f"Simulation completed after: {solver_end_time - solver_start_time:.1f} s.", color="success")
             break
         else:
             parsed = parse_line(line)
             if parsed:
                 data.append(parsed)
+
+            solver_status = dbc.Alert(f"Solver is running. Up time: {time.perf_counter() - solver_start_time:.1f} s.", color="warning")
 
     # Plotting the convergence of residuals
     fig = go.Figure()
@@ -437,14 +525,13 @@ def update_convergence_graph(n, data):
         # fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[d["res4"] for d in data],
         #                          mode="lines+markers", name="rho_E"))
 
-    fig.update_layout(title="Convergence History",
-                      xaxis_title="Iteration",
+    fig.update_layout(xaxis_title="Iteration",
                       yaxis_title="Log10(L2 norm of RHO)",
                       legend_title="Variable")
 
     # fig.update_yaxes(title_text="Residual", type="log")
 
-    return data, fig, disable_stop_button
+    return data, fig, disable_stop_button, console_data, solver_status, log_poll, button_see_results
 
 def parse_line(line):
     pattern = r"Iteration:\s*(\d+)\s*:\s*L2_norms:\s*([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s*C_l:\s*([\d.eE+-]+)\s*C_d:\s*([\d.eE+-]+)\s*C_m:\s*([\d.eE+-]+)"
@@ -464,7 +551,8 @@ def parse_line(line):
 
 @dash.callback(
     [Output("solver-status", "children"),
-    Output("stop_solver", "disabled", allow_duplicate=True)],
+    Output("stop_solver", "disabled", allow_duplicate=True),
+     Output("log-poll", "disabled"),],
     Input("stop_solver", "n_clicks"),
     prevent_initial_call=True,
 )
@@ -473,6 +561,6 @@ def stop_simulation(n_clicks):
 
     if simulation_process and simulation_process.poll() is None:
         simulation_process.terminate()  # or .kill() if needed
-        return dbc.Alert("Simulation stopped.", color="warning"), True
+        return dbc.Alert("Simulation stopped.", color="warning"), True, True
     else:
-        return dbc.Alert("No running simulation to stop.", color="secondary"), True
+        return dbc.Alert("No running simulation to stop.", color="secondary"), True, dash.no_update

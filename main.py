@@ -2,6 +2,7 @@ import dash
 from dash import dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 import pages
+import os
 
 # Initialize Dash App with Pages Support
 app = dash.Dash(
@@ -73,6 +74,9 @@ app.layout = html.Div([
     navbar,
     dash.page_container  # This will display the selected page
 ])
+
+os.makedirs("temp/", exist_ok=True)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

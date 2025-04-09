@@ -382,7 +382,26 @@ layout = html.Div([
                     ], title="Mesh Generation")
                 ])
             ])
-        ])
+        ]),
+
+        html.Div(children=[
+            html.Hr(),
+
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button(
+                        "Configure the CFD solver",
+                        href="/page-euler2d",
+                        color="primary",
+                        className="mt-4"
+                    ),
+                    width="auto"
+                )],
+
+                justify="center",
+                className="mb-4"
+            ),
+        ]),
     ])
 ])
 
@@ -593,10 +612,13 @@ def update_fig(fit_cst_clicks, fit_bspline_clicks, gen_clicks, show_pts, camber,
 
 
         if method == "B-Spline" and triggered == "fit-bspline" and bspline_content:
-            with open("temp_bspline.dat", "w") as f:
+
+            os.makedirs(os.path.dirname("temp/"), exist_ok=True)
+
+            with open("temp/temp_bspline.dat", "w") as f:
                 decoded = base64.b64decode(bspline_content.split(',')[1]).decode('utf-8')
                 f.write(decoded)
-            BSpline_solver.run_bspline_solver("temp_bspline.dat", bspline_knot, bspline_degree)
+            BSpline_solver.run_bspline_solver("temp/temp_bspline.dat", bspline_knot, bspline_degree)
 
             # curve = np.loadtxt("BSpline_curve.txt", dtype=float, usecols=(0, 1))
             airfoil = BSplineWrapper()

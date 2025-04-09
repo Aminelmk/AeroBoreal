@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.optimize as so
+import os
 
 class ConformalMapping:
 
@@ -170,6 +171,8 @@ class ConformalMapping:
         self.Y = y_coords[::-1, :]
 
     def write_plot3d(self, filename="mesh.xyz"):
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         n_xi = self.X.shape[1]
         n_eta = self.Y.shape[0]

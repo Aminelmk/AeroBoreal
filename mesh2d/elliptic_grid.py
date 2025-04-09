@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.animation import FuncAnimation
 import copy
+import os
 
 class PoissonMesh:
     def __init__(self, n_nodes, xs, ys):
@@ -176,6 +177,8 @@ class PoissonMesh:
         pass
 
     def write_plot3d(self, filename="mesh.xyz"):
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         n_xi = self.X.shape[1]
         n_eta = self.Y.shape[0]

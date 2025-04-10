@@ -265,7 +265,7 @@ layout = html.Div([
         html.H5("Convergence history: "),
         dcc.Graph(id="live-graph"),
         html.H5("Raw console log: "),
-        dcc.Textarea(id='solver-console', disabled=True, style={'width': '100%', 'height': 200}),
+        dcc.Textarea(id='solver-console', disabled=True, style={'width': '100%', 'height': 300}),
     ]),
 
     html.Div(children=[
@@ -524,6 +524,20 @@ def update_convergence_graph(n, data, console_data):
         #                          mode="lines+markers", name="rho_v"))
         # fig.add_trace(go.Scatter(x=[d["iter"] for d in data], y=[d["res4"] for d in data],
         #                          mode="lines+markers", name="rho_E"))
+
+    fig.add_shape(
+        type="line",
+        x0=0,
+        x1=1,
+        xref="paper",
+        y0=-11,
+        y1=-11,
+        line=dict(
+            color="black",
+            width=1,
+            dash="dash"
+        )
+    )
 
     fig.update_layout(xaxis_title="Iteration",
                       yaxis_title="Log10(L2 norm of RHO)",

@@ -247,11 +247,11 @@ layout = html.Div([
 
 
     dbc.Row([
-    # dcc.Loading(
-    #     id="solver-loading-vlm",
-    #     type="default",
-    #     children=html.Div(id='solver-status-vlm', className="mt-3")
-    # ),
+    dcc.Loading(
+        id="solver-loading-vlm",
+        type="default",
+        children=html.Div(id='solver-status-vlm', className="mt-3")
+    ),
 
 
     # ======= Residual data =======
@@ -273,8 +273,7 @@ layout = html.Div([
 # Callbacks
 
 @dash.callback(
-    [Output('solver-status-vlm', 'children'),
-     Output('solver-realtime-convergence-VLM', 'hidden'),
+    [Output('solver-realtime-convergence-VLM', 'hidden'),
      Output('log-poll-VLM', 'disabled', allow_duplicate=True),
      Output('convergence-store-VLM', 'data', allow_duplicate=True),
      Output('solver-console-VLM', 'value', allow_duplicate=True)],
@@ -319,10 +318,10 @@ def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, nodes, quatercord, data_eu
     #     status = dbc.Alert(f" Error: {str(e)}", color="danger")
     #     redirect = dash.no_update
 
-    status = dbc.Alert("Running simulation...", color="info")
+    # status = dbc.Alert("Running simulation...", color="info")
     redirect = dash.no_update
 
-    return status, False, False, [], ""
+    return False, False, [], ""
 
 
 

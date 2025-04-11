@@ -355,6 +355,26 @@ layout = html.Div([
                                 dcc.Download(id="download-mesh")
                             ]),
                 ]),
+
+                html.Div(children=[
+            html.Hr(),
+
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button(
+                        "Configure the NL-VLM-Structure Solver",
+                        href="/pages-vlmstructure3D",
+                        color="primary",
+                        className="mt-4"
+                    ),
+                    width="auto"
+                )],
+
+                justify="center",
+                className="mb-4"
+            ),
+        ]),
+
             ]),
         ]),
     ]),

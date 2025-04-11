@@ -420,6 +420,12 @@ def update_convergence_graph(n, data, console_data):
             button_see_results3D = False
             solver_end_time_VLM = time.perf_counter()
 
+            os.makedirs("temp_vlm/", exist_ok=True)
+
+            f = open("temp_vlm/vlm_log.txt", "w")
+            f.write(console_data)
+            f.close()
+
             solver_status = dbc.Alert(f"Simulation completed after: {solver_end_time_VLM - solver_start_time_VLM:.1f} s.", color="success")
             break
         else:

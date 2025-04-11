@@ -307,6 +307,9 @@ layout = html.Div([
     
     dbc.Container(
     [
+
+        html.Div(id='dummy-div'),
+
         html.Br(),
         html.H1("Fluid-Structure Results", className="mb-4 text-center"),
 
@@ -730,4 +733,31 @@ def update_displacement_plots(relayout_data):
 
 
     return tz_vs_y_fig, ry_vs_y_fig, Cl_discrete, alpha_discrete
+
+
+@dash.callback(
+    Output('terminal-output', 'value'),
+    Input('dummy-div', 'children'),
+)
+
+def read_vlm_coeff(dummy):
+    vlm_log = open("temp_vlm/vlm_log.txt", "r")
+    log = vlm_log.readlines()
+    vlm_log.close()
+
+    log = log[::-1]
+
+    print(f"vlm log: {log}")
+
+    cl = return_cl_line(log)
+
+    # print(f"vlm_log: {vlm_log}")
+
+    return cl
+
+
+def return_cl_line(log):
+    for line in log:
+        if line.startswith("CL"):
+            return line.strip()
 

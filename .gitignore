@@ -7,3 +7,4 @@ test.q
 checkpoint_test.txt
 mesh3d.x
 temp_bspline.dat
+temp_vlm/

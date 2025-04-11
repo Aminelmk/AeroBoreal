@@ -11,6 +11,8 @@ import os
 import pandas as pd
 from urllib.parse import parse_qs, urlparse
 from courbes_pression.Plot_cp import *
+import re
+import subprocess
 
 dash.register_page(__name__, path="/pages-pressionVLM")
 
@@ -310,35 +312,64 @@ layout = html.Div([
 
         dbc.Row([
 
-        dbc.Col([
+            dbc.Col([
 
-            html.Label("Select Wing Type:"),
-            dcc.Dropdown(
-                id='wing-selector',
-                options=[
-                                {"label": "Deformed Wing", "value": "deformed"},
-                                {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
-                            ],
-                value="deformed",
-            ),
-        ], width=4),
+                html.Label("Select Wing Type:"),
+                dcc.Dropdown(
+                    id='wing-selector',
+                    options=[
+                                    {"label": "Deformed Wing", "value": "deformed"},
+                                    {"label": "Initial Wing (Non-Deformed)", "value": "initial"},
+                                ],
+                    value="deformed",
+                ),
+            ], width=4),
 
-        dbc.Col([
-            html.Label("Select Value to Visualize:"),
-            dcc.Dropdown(
-                id='value-selector',
-                options=[
-                                {"label": "Pressure", "value": "pressure"},
-                                {"label": "Pressure Coefficient", "value": "cp"},
-                                {"label": "Pressure Coefficient Curves", "value": "cp2d"},
-                                {"label": "Drag", "value": "drag"},
-                                {"label": "Lift", "value": "lift"}
-                            ],
-                            value="pressure",  # Default selection.
-            ),
-        ], width=4),
+            dbc.Col([
+                html.Label("Select Value to Visualize:"),
+                dcc.Dropdown(
+                    id='value-selector',
+                    options=[
+                                    {"label": "Pressure", "value": "pressure"},
+                                    {"label": "Pressure Coefficient", "value": "cp"},
+                                    {"label": "Pressure Coefficient Curves", "value": "cp2d"},
+                                    {"label": "Drag", "value": "drag"},
+                                    {"label": "Lift", "value": "lift"}
+                                ],
+                                value="pressure",  # Default selection.
+                ),
+            ], width=4),
+
+            dbc.Col([
+                    html.Label("Aerodynamic Coefficients:"),
+                    dcc.Textarea(
+                        id='terminal-output',
+                        value="No output yet.",  # Default text
+                        style={
+                            "width": "100%",
+                            "height": "50px",
+                            "resize": "none",
+                            "font-family": "monospace",
+                            "background-color": "#f9f9f9",
+                            "border": "1px solid #ccc",
+                            "border-radius": "5px",
+                            "padding": "10px",
+                        },
+                        readOnly=True,  # Make the text box read-only
+                    ),
+                ], width=4),
+
+
 
     ], className="mb-4", justify="center"),
+    dcc.Interval(
+                id="terminal-update-interval",
+                interval=1000,  # Update every 1 second
+                n_intervals=0,
+            ),
+
+            # Store component to hold the terminal output
+            dcc.Store(id="terminal-output-store", data=""),
 
         # Row for "Show Panels" and "Selected Panel Value"
         dbc.Row(
@@ -623,7 +654,7 @@ def update_displacement_plots(relayout_data):
     tz_vs_y_fig = go.Figure()
     tz_vs_y_fig.add_trace(go.Scatter(x=data["y"]/span, y=data["Tz"]*1000, mode="lines+markers", name="Tz vs. y/span"))
     tz_vs_y_fig.update_layout(
-        title="Tz vs. y/span",
+        title="Bending vs. y/span",
         xaxis_title="y/span",
         yaxis_title="Tz (mm)",
         template="plotly_white",
@@ -633,7 +664,7 @@ def update_displacement_plots(relayout_data):
     ry_vs_y_fig = go.Figure()
     ry_vs_y_fig.add_trace(go.Scatter(x=data["y"]/span, y=np.degrees(data["Ry"]), mode="lines+markers", name="Ry vs. y/span"))
     ry_vs_y_fig.update_layout(
-        title="Ry vs. y/span",
+        title="Twist vs. y/span",
         xaxis_title="y/span",
         yaxis_title="Ry (deg)",
         template="plotly_white",
@@ -679,5 +710,4 @@ def update_displacement_plots(relayout_data):
 
 
     return tz_vs_y_fig, ry_vs_y_fig, Cl_discrete, alpha_discrete
-
 

@@ -1,0 +1,10 @@
+dash==3.0.0
+dash-bootstrap-components==2.0.0
+dash-vtk==0.0.9
+dash_daq==0.6.0
+Flask==3.0.3
+matplotlib==3.10.1
+numpy==2.2.3
+plotly==6.0.1
+scipy==1.15.2
+vtk==9.4.1

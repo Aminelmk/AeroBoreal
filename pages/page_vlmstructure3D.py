@@ -247,11 +247,11 @@ layout = html.Div([
 
 
     dbc.Row([
-    dcc.Loading(
-        id="solver-loading-vlm",
-        type="default",
-        children=html.Div(id='solver-status-vlm', className="mt-3")
-    ),
+    # dcc.Loading(
+    #     id="solver-loading-vlm",
+    #     type="default",
+    #     children=html.Div(id='solver-status-vlm', className="mt-3")
+    # ),
 
 
     # ======= Residual data =======
@@ -275,7 +275,9 @@ layout = html.Div([
 @dash.callback(
     [Output('solver-status-vlm', 'children'),
      Output('solver-realtime-convergence-VLM', 'hidden'),
-     Output("log-poll-VLM", "disabled", allow_duplicate=True)],
+     Output('log-poll-VLM', 'disabled', allow_duplicate=True),
+     Output('convergence-store-VLM', 'data', allow_duplicate=True),
+     Output('solver-console-VLM', 'value', allow_duplicate=True)],
     [Input('run_solvervlm', 'n_clicks')],
     [State('vlm_Mach', 'value'),
      State('vlm_alpha', 'value'),
@@ -320,7 +322,7 @@ def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, nodes, quatercord, data_eu
     status = dbc.Alert("Running simulation...", color="info")
     redirect = dash.no_update
 
-    return status, False, False
+    return status, False, False, [], ""
 
 
 
@@ -401,7 +403,8 @@ def update_convergence_graph(n, data, console_data):
     fig = go.Figure()
 
     if data:
-        fig.add_trace(go.Scatter(x=[i for i in range(1,len(data)+1)], y=[np.log10(d["erreur"]) for d in data],
+        fig.add_trace(go.Scatter(x=[i for i in range(1,len(data)+1)], 
+                                 y=[np.log10(d["erreur"]) for d in data],
                                  mode="lines", name="Erreur"))
 
  
@@ -421,10 +424,8 @@ def update_convergence_graph(n, data, console_data):
     )
 
     fig.update_layout(xaxis_title="Iteration",
-                      yaxis_title="Erreur")
-
-    # fig.update_yaxes(title_text="Residual", type="log")
-
+                      yaxis_title="Log10 de la norme des déplacements",
+                      xaxis=dict(tickmode="linear", tick0=1, dtick=1))
 
     # return data, fig, disable_stop_button, console_data, solver_status, log_poll, button_see_results
     return data, fig, console_data, solver_status, log_poll

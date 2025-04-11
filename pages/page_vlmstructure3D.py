@@ -10,6 +10,25 @@ from SOLVEUR_COUPLE import solveur_couple
 
 from euler2d import euler_solver
 
+import os
+import time
+
+import io
+import subprocess
+import threading
+import queue
+import sys
+from contextlib import redirect_stdout
+import re
+
+output_queue_VLM = queue.Queue()
+
+simulation_process_VLM = None
+
+solver_start_time_VLM = None
+solver_end_time_VLM = None
+
+
 dash.register_page(__name__, path="/pages-vlmstructure3D")
 
 # ======================================================================
@@ -215,13 +234,34 @@ layout = html.Div([
         ], justify="center"),
 
 
-    dbc.Row([
 
+    html.Div(id="solver-realtime-convergence-VLM", hidden=True, children=[
+        html.Hr(),
+        html.Div(id="solver-status-VLM", className="mt-3"),
+        html.H5("Convergence history: "),
+        dcc.Graph(id="live-graph-VLM"),
+        html.H5("Raw console log: "),
+        dcc.Textarea(id='solver-console-VLM', disabled=True, style={'width': '100%', 'height': 300}),
+    ]),
+
+
+
+    dbc.Row([
     dcc.Loading(
         id="solver-loading-vlm",
         type="default",
         children=html.Div(id='solver-status-vlm', className="mt-3")
     ),
+
+
+    # ======= Residual data =======
+    dcc.Store(id="convergence-store-VLM", data=[]),
+    dcc.Store(id="console-store-VLM", data=[]),
+
+    dcc.Interval(id="log-poll-VLM", interval=500, disabled=True, n_intervals=0),
+
+
+
 
     html.Div(id='visualization-redirect-vlm', style={'display': 'none'})
     ])
@@ -234,7 +274,8 @@ layout = html.Div([
 
 @dash.callback(
     [Output('solver-status-vlm', 'children'),
-    Output('visualization-redirect-vlm', 'children')],
+     Output('solver-realtime-convergence-VLM', 'hidden'),
+     Output("log-poll-VLM", "disabled", allow_duplicate=True)],
     [Input('run_solvervlm', 'n_clicks')],
     [State('vlm_Mach', 'value'),
      State('vlm_alpha', 'value'),
@@ -255,17 +296,155 @@ def run_simulation(n_clicks, Mach, alpha, Pinf, Tinf, nodes, quatercord, data_eu
     write_vlm_file(Mach, alpha, Pinf, Tinf, it_max, data_euler, wingmesh, nodes, quatercord)
     write_struct_file(data_structure)
 
-    # Run solver
-    try:
-        solveur_couple.solve("SOLVEUR_COUPLE/input_main.txt")
-        subprocess.run(["python", "SOLVEUR_COUPLE/write_vtu.py"], check=True)
-        status = dbc.Alert("✅ Simulation completed successfully!", color="success")
-        redirect = dcc.Location(pathname="/pages-pressionVLM", id="redirect-vlm")
-    except Exception as e:
-        status = dbc.Alert(f" Error: {str(e)}", color="danger")
-        redirect = dash.no_update
+    with output_queue_VLM.mutex:
+        output_queue_VLM.queue.clear()
 
-    return status, [redirect] 
+    
+    threading.Thread(target=run_solver_with_capture_VLM, daemon=True).start()
+
+    global solver_start_time_VLM, solver_end_time_VLM
+
+    solver_start_time_VLM = time.perf_counter()
+    solver_end_time_VLM = 0.0
+
+    # Run solver
+    # try:
+    #     solveur_couple.solve("SOLVEUR_COUPLE/input_main.txt")
+    #     subprocess.run(["python", "SOLVEUR_COUPLE/write_vtu.py"], check=True)
+    #     status = dbc.Alert("✅ Simulation completed successfully!", color="success")
+    #     redirect = dcc.Location(pathname="/pages-pressionVLM", id="redirect-vlm")
+    # except Exception as e:
+    #     status = dbc.Alert(f" Error: {str(e)}", color="danger")
+    #     redirect = dash.no_update
+
+    status = dbc.Alert("Running simulation...", color="info")
+    redirect = dash.no_update
+
+    return status, False, False
+
+
+
+
+def run_solver_with_capture_VLM():
+
+    global simulation_process_VLM
+
+    simulation_process_VLM = subprocess.Popen(
+        ["python", "SOLVEUR_COUPLE/launch_vlm.py"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    for line in simulation_process_VLM.stdout:
+        output_queue_VLM.put(line)
+        print(line)
+    output_queue_VLM.put("__DONE__")
+
+    print("Simulation process finished.")
+
+
+
+
+@dash.callback(
+    [Output("convergence-store-VLM", "data"),
+     Output("live-graph-VLM", "figure"),
+    #  Output("stop_solver", "disabled", allow_duplicate=True),
+     Output("solver-console-VLM", "value"),
+     Output("solver-status-VLM", "children", allow_duplicate=True),
+     Output("log-poll-VLM", "disabled", allow_duplicate=True),
+    #  Output("button-see-results", "disabled", allow_duplicate=True),
+     ],
+    Input("log-poll-VLM", "n_intervals"),
+    [State("convergence-store-VLM", "data"),
+     State("solver-console-VLM", "value"),],
+    prevent_initial_call=True,
+)
+def update_convergence_graph(n, data, console_data):
+
+    disable_stop_button = dash.no_update
+    solver_status = dash.no_update
+    log_poll = dash.no_update
+    button_see_results = dash.no_update
+    global solver_start_time_VLM, solver_end_time_VLM
+    if data is None:
+        data = []
+
+    if console_data is None:
+        console_data = ""
+
+    while not output_queue_VLM.empty():
+        line = output_queue_VLM.get()
+        console_data += f"{line}"
+
+        if line.startswith("__ERROR__"):
+            print("ERROR in simulation output")
+            continue
+
+        if line == "__DONE__":
+            print("Simulation finished streaming")
+            disable_stop_button = True
+            log_poll = True
+            button_see_results = False
+            solver_end_time_VLM = time.perf_counter()
+
+            solver_status = dbc.Alert(f"Simulation completed after: {solver_end_time_VLM - solver_start_time_VLM:.1f} s.", color="success")
+            break
+        else:
+            parsed = parse_line(line)
+            if parsed is not None:
+                data.append(parsed)
+            solver_status = dbc.Alert(f"Solver is running. Up time: {time.perf_counter() - solver_start_time_VLM:.1f} s.", color="warning")
+
+    # Plotting the convergence of residuals
+    fig = go.Figure()
+
+    if data:
+        fig.add_trace(go.Scatter(x=[i for i in range(1,len(data)+1)], y=[np.log10(d["erreur"]) for d in data],
+                                 mode="lines", name="Erreur"))
+
+ 
+
+    fig.add_shape(
+        type="line",
+        x0=0,
+        x1=1,
+        xref="paper",
+        y0=-12,
+        y1=-12,
+        line=dict(
+            color="black",
+            width=1,
+            dash="dash"
+        )
+    )
+
+    fig.update_layout(xaxis_title="Iteration",
+                      yaxis_title="Erreur")
+
+    # fig.update_yaxes(title_text="Residual", type="log")
+
+
+    # return data, fig, disable_stop_button, console_data, solver_status, log_poll, button_see_results
+    return data, fig, console_data, solver_status, log_poll
+
+
+
+def parse_line(line):
+    pattern = r"Erreur\s*=\s*([\d.eE+-]+)"
+    match = re.search(pattern, line)
+    if match:
+        return {
+            "erreur": float(match.group(1)),
+        }
+    return None
+
+
+
+
+
+
 
 @dash.callback(
     Output('eulerprofil_table', 'data'),

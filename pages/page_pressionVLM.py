@@ -602,7 +602,7 @@ import re  # For extracting numbers from filenames
 )
 def update_displacement_plots(relayout_data):
     # Path to the "temp" folder
-    temp_folder = "../HTML_3D/temp"
+    temp_folder = "temp"
 
     # Find all displacement_i.csv files in the folder
     displacement_files = [f for f in os.listdir(temp_folder) if (f.startswith("displacement_") and f.endswith(".csv"))]

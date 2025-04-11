@@ -440,9 +440,9 @@ def update_convergence_graph(n, data, console_data):
     if data:
         fig.add_trace(go.Scatter(x=[i for i in range(1,len(data)+1)], 
                                  y=[np.log10(d["erreur"]) for d in data],
-                                 mode="lines", name="Erreur"))
-
- 
+                                 mode="lines+markers", name="Error",
+                                 marker=dict(size=8, symbol="square",)
+                                 ))
 
     fig.add_shape(
         type="line",
@@ -459,8 +459,10 @@ def update_convergence_graph(n, data, console_data):
     )
 
     fig.update_layout(xaxis_title="Iteration",
-                      yaxis_title="Log10 de la norme des déplacements",
+                      yaxis_title="Log10(displacement L2 norm)",
                       xaxis=dict(tickmode="linear", tick0=1, dtick=1))
+
+    fig.update_xaxes(range=[1, len(data)])
 
     # return data, fig, disable_stop_button, console_data, solver_status, log_poll, button_see_results
     return data, fig, console_data, solver_status, log_poll, button_see_results3D

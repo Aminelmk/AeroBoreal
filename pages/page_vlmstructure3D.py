@@ -253,7 +253,37 @@ layout = html.Div([
         children=html.Div(id='solver-status-vlm', className="mt-3")
     ),
 
+    html.Div(children=[
+        html.Hr(),
 
+        dbc.Row([
+            dbc.Col(
+                dbc.Button(
+                    "Back to Configuration",
+                    href="/page-mesh3d",
+                    color="secondary",
+                    className="mt-4"
+                ),
+                width="auto"
+            ),
+
+            dbc.Col(
+                dbc.Button(
+                    "See results",
+                    href="/pages-pressionVLM",
+                    id="button-see-results3D",
+                    disabled=True,
+                    color="primary",
+                    className="mt-4"
+                ),
+                width="auto"
+            )],
+
+            justify="center",
+            className="mb-4"
+        ),
+    ]),
+    
     # ======= Residual data =======
     dcc.Store(id="convergence-store-VLM", data=[]),
     dcc.Store(id="console-store-VLM", data=[]),
@@ -355,7 +385,7 @@ def run_solver_with_capture_VLM():
      Output("solver-console-VLM", "value"),
      Output("solver-status-VLM", "children", allow_duplicate=True),
      Output("log-poll-VLM", "disabled", allow_duplicate=True),
-    #  Output("button-see-results", "disabled", allow_duplicate=True),
+    Output("button-see-results3D", "disabled", allow_duplicate=True),
      ],
     Input("log-poll-VLM", "n_intervals"),
     [State("convergence-store-VLM", "data"),
@@ -367,7 +397,7 @@ def update_convergence_graph(n, data, console_data):
     disable_stop_button = dash.no_update
     solver_status = dash.no_update
     log_poll = dash.no_update
-    button_see_results = dash.no_update
+    button_see_results3D = dash.no_update
     global solver_start_time_VLM, solver_end_time_VLM
     if data is None:
         data = []
@@ -387,7 +417,7 @@ def update_convergence_graph(n, data, console_data):
             print("Simulation finished streaming")
             disable_stop_button = True
             log_poll = True
-            button_see_results = False
+            button_see_results3D = False
             solver_end_time_VLM = time.perf_counter()
 
             solver_status = dbc.Alert(f"Simulation completed after: {solver_end_time_VLM - solver_start_time_VLM:.1f} s.", color="success")
@@ -427,7 +457,7 @@ def update_convergence_graph(n, data, console_data):
                       xaxis=dict(tickmode="linear", tick0=1, dtick=1))
 
     # return data, fig, disable_stop_button, console_data, solver_status, log_poll, button_see_results
-    return data, fig, console_data, solver_status, log_poll
+    return data, fig, console_data, solver_status, log_poll, button_see_results3D
 
 
 

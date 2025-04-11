@@ -442,10 +442,30 @@ layout = html.Div([
                     width=6
                 )
             ]
-        )
+        ),
+
+        html.Div(children=[
+            html.Hr(),
+
+            dbc.Row([
+                dbc.Col(
+                    dbc.Button(
+                        "Back to Configuration",
+                        href="/pages-vlmstructure3D",
+                        color="secondary",
+                        className="mt-4"
+                    ),
+                    width="auto"
+                )],
+
+                justify="center",
+                className="mb-4"
+            ),
+        ]),
     ],
     fluid=False,
 )
+
 
 ])
 

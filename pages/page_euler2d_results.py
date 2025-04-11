@@ -423,7 +423,7 @@ def load_results(load_button):
 #         return [], None
     
 def maillage_depuis_input():
-    with open("input.txt", "r") as f:
+    with open("temp/input.txt", "r") as f:
         for line in f:
             if line.startswith("mesh_file"):
                 return line.split("=")[1].strip()
